@@ -38,9 +38,11 @@ const [filtroAno, setFiltroAno] = useState('');
       //params.append('page', currentPage);
       //params.append('limit', ITEMS_PER_PAGE);
 
+  const API_URL = import.meta.env.VITE_API_URL;
+  const API_BASE_URL = `${API_URL}/api`;
 
       // Buscar histórico
-      const response = await fetch(`http://localhost:3001/api/historico?${params}`, {
+      const response = await fetch(`${API_URL}/api/historico?${params}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -81,7 +83,7 @@ const [filtroAno, setFiltroAno] = useState('');
     if (filtroAno) params.append('ano', filtroAno);
     if (searchTerm.trim()) params.append('palavraChave', searchTerm.trim());
 
-    const response = await fetch(`http://localhost:3001/api/historico/estatisticas?${params.toString()}`, {
+    const response = await fetch(`${API_URL}/api/historico/estatisticas?${params.toString()}`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
 
@@ -119,7 +121,7 @@ const [filtroAno, setFiltroAno] = useState('');
     }
 
     try {
-      const response = await fetch(`http://localhost:3001/api/historico/deletar-resposta/${id}`, {
+      const response = await fetch(`${API_URL}/api/historico/deletar-resposta/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
