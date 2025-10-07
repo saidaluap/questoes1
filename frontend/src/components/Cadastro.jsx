@@ -87,7 +87,7 @@ function Cadastro() {
       senha: password,
       tipousuario: tipo_usuario
   };
-    const result = await register(userData);
+    const result = await register(backendData);
     
     if (result.success) {
       navigate('/dashboard');
