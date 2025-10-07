@@ -81,7 +81,12 @@ function Cadastro() {
     setLoading(true);
     setErrors({});
 
-    const { confirmPassword, ...userData } = formData;
+    const { confirmPassword, password, tipo_usuario, ...rest } = formData;
+    const backendData = {
+      ...rest,
+      senha: password,
+      tipousuario: tipo_usuario
+  };
     const result = await register(userData);
     
     if (result.success) {
