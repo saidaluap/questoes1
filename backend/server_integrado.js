@@ -14,6 +14,8 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 
+app.use(cors());
+app.use(express.json());
 
 // Caminho para o arquivo Excel
 const EXCEL_FILE_PATH = path.join(__dirname, "usuarios_ortopedia.xlsx");
@@ -63,9 +65,6 @@ const updateExcelFile = (userData) => {
   }
 };
 
-app.use(cors());
-
-app.use(express.json());
 
 // Conectar ao banco de dados SQLite
 const db = new sqlite3.Database("./questoes.db", (err) => {
