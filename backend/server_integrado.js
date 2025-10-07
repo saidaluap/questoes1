@@ -63,7 +63,10 @@ const updateExcelFile = (userData) => {
   }
 };
 
-app.use(cors());
+app.use(cors({
+  origin: ['https://questoes1-frontend.onrender.com'],
+  credentials: true // se usar sessões/cookies, senão pode omitir
+}));
 app.use(express.json());
 
 // Conectar ao banco de dados SQLite
