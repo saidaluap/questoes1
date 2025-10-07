@@ -83,11 +83,12 @@ function Cadastro() {
 
     const { confirmPassword, password, tipo_usuario, ...rest } = formData;
     const backendData = {
-      ...rest,
-      senha: password,
-      tipousuario: tipo_usuario
-  };
+     ...rest,
+      password: password,         // CERTO!
+     tipo_usuario: tipo_usuario  // CERTO!
+};
     const result = await register(backendData);
+
     
     if (result.success) {
       navigate('/dashboard');
