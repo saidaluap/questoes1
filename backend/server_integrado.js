@@ -63,10 +63,8 @@ const updateExcelFile = (userData) => {
   }
 };
 
-app.use(cors({
-  origin: ['https://questoes1-frontend.onrender.com'],
-  credentials: true // se usar sessões/cookies, senão pode omitir
-}));
+app.use(cors());
+
 app.use(express.json());
 
 // Conectar ao banco de dados SQLite
@@ -157,6 +155,7 @@ app.post("/api/auth/register", [
   body('hospital').notEmpty().withMessage('Hospital é obrigatório'),
   body('tipo_usuario').isIn(['R1', 'R2', 'R3', 'R4', 'R5', 'Ortopedista']).withMessage('Tipo de usuário inválido')
 ], async (req, res) => {
+    console.log("Recebi cadastro:", req.body);  // <-- Coloque aqui
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({
