@@ -5,6 +5,8 @@ import Header from './Header';
 import Footer from './Footer';
 import CountUp from 'react-countup';
 
+  const API_URL = import.meta.env.VITE_API_URL;
+  const API_BASE_URL = `${API_URL}/api`;
 
 function Dashboard() {
   const { user, token } = useAuth();
@@ -47,8 +49,6 @@ function Dashboard() {
 
   const QUESTIONS_PER_PAGE = 5;
 
-  const API_URL = import.meta.env.VITE_API_URL;
-  const API_BASE_URL = `${API_URL}/api`;
 
 const fetchQuestoes = async () => {
   setLoading(true);
