@@ -16,6 +16,8 @@ const PORT = process.env.PORT || 3001;
 
 app.use(cors());
 app.use(express.json());
+console.log("DEPLOY VERSION CHECADA 07/10/2025 16:50");
+
 
 // Caminho para o arquivo Excel
 const EXCEL_FILE_PATH = path.join(__dirname, "usuarios_ortopedia.xlsx");
