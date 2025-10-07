@@ -68,9 +68,9 @@ const fetchQuestoes = async () => {
 
     if (semFiltrosNenhum()) {
       // SEM FILTROS: busque o total absoluto separado
-      const totalResponse = await fetch('${API_URL}/api/totalQuestoes', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const totalResponse = await fetch(`${API_URL}/api/totalQuestoes`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
       const totalData = await totalResponse.json();
       //setStats(prev => ({ ...prev, total: totalData.total }));
       setTotalPages(Math.ceil(totalData.total / QUESTIONS_PER_PAGE));
@@ -143,8 +143,9 @@ const fetchQuestoes = async () => {
     }
   };
 
+
   const fetchTotalQuestoes = async () => {
-  const response = await fetch('${API_URL}/api/totalQuestoes', {
+  const response = await fetch(`${API_URL}/api/totalQuestoes`, {
     headers: { 'Authorization': `Bearer ${token}` }
   });
   if (response.ok) {
@@ -152,6 +153,9 @@ const fetchQuestoes = async () => {
     setStats(prev => ({ ...prev, total: data.totalQuestoes }));
   }
 };
+
+
+
 
 
   useEffect(() => {
