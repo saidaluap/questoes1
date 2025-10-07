@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { Search, Filter, X } from 'lucide-react';
 import { temasData, anosDisponiveis } from '../data/questoes';
 
+  const API_URL = import.meta.env.VITE_API_URL;
+  const API_BASE_URL = `${API_URL}/api`;
+
 const FiltroQuestoes = ({ filtros, onFiltroChange, onLimparFiltros, onAplicarFiltros }) => {
   const [mostrarAvancados, setMostrarAvancados] = useState(false);
 
