@@ -212,12 +212,12 @@ app.post("/api/auth/register", [
             // Não falhar o cadastro se houver erro na planilha
           }
 
-          // Gerar token JWT
-          const token = jwt.sign(
-            { id: user.id, email, nome, hospital, tipo_usuario },
+            const token = jwt.sign(
+             { id: userId, email, nome, hospital, tipo_usuario },
             process.env.JWT_SECRET,
-            { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
+             { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
           );
+
 
           res.json({
             success: true,
