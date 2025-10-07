@@ -549,8 +549,6 @@ const handleResponder = async (questionId) => {
                   onChange={(e) => handleFiltroChange('area', e.target.value)}
                 >
                   <option value="">Selecione...</option>
-                  <option value="Ortopedia">Ortopedia</option>
-                  <option value="Trauma">Traumatologia</option>
                   <option value="Ortopedia Pediátrica">Ortopedia Pediátrica</option>
                   <option value="Coluna">Coluna</option>
                   <option value="Mão">Mão</option>
