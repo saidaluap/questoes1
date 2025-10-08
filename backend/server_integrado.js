@@ -207,6 +207,7 @@ app.post("/api/auth/register", [
       .maybeSingle();
 
     if (error) {
+      console.error("Erro ao criar usuário no Supabase:", error);
       return res.status(500).json({ success: false, message: "Erro ao criar usuário", error });
     }
 
