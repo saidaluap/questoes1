@@ -13,6 +13,9 @@ const path = require("path");
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+const supabase = require('./supabaseClient');
+
+
 
 app.use(cors());
 app.use(express.json());
@@ -156,7 +159,7 @@ app.post("/api/auth/register", [
   body('hospital').notEmpty().withMessage('Hospital é obrigatório'),
   body('tipo_usuario').isIn(['R1', 'R2', 'R3', 'R4', 'R5', 'Ortopedista']).withMessage('Tipo de usuário inválido')
 ], async (req, res) => {
-    console.log("Recebi cadastro:", req.body);  // <-- Coloque aqui
+  console.log("Recebi cadastro:", req.body);
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({
@@ -169,77 +172,77 @@ app.post("/api/auth/register", [
   const { email, password, nome, hospital, tipo_usuario } = req.body;
 
   try {
-    // Verificar se email já existe
-    db.get("SELECT id FROM users WHERE email = ?", [email], async (err, row) => {
-      if (err) {
-        return res.status(500).json({ success: false, message: "Erro interno do servidor" });
-      }
-      
-      if (row) {
-        return res.status(400).json({
-          success: false,
-          message: "Email já está em uso",
-          errors: [{ field: "email", message: "Email já está em uso" }]
-        });
-      }
+    // Checar se o email já existe no Supabase
+    const { data: existingUser } = await supabase
+      .from('dados')
+      .select('id')
+      .eq('email', email)
+      .maybeSingle();
 
-      // Hash da senha
-      const saltRounds = parseInt(process.env.BCRYPT_ROUNDS) || 12;
-      const password_hash = await bcrypt.hash(password, saltRounds);
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: "Email já está em uso",
+        errors: [{ field: "email", message: "Email já está em uso" }]
+      });
+    }
 
-      // Inserir usuário
-      db.run(
-        `INSERT INTO users (email, password_hash, nome, hospital, tipo_usuario) VALUES (?, ?, ?, ?, ?)`,
-        [email, password_hash, nome, hospital, tipo_usuario],
-        function (err) {
-          if (err) {
-            return res.status(500).json({ success: false, message: "Erro ao criar usuário" });
-          }
+    // Gerar hash da senha
+    const saltRounds = parseInt(process.env.BCRYPT_ROUNDS) || 12;
+    const password_hash = await bcrypt.hash(password, saltRounds);
 
-          const userId = this.lastID;
-
-          // Atualizar planilha Excel automaticamente (não bloquear se falhar)
-          try {
-            updateExcelFile({
-              id: userId,
-              nome,
-              email,
-              hospital,
-              tipo_usuario
-            });
-          } catch (excelError) {
-            console.error('Erro ao atualizar Excel:', excelError);
-            // Não falhar o cadastro se houver erro na planilha
-          }
-
-            const token = jwt.sign(
-             { id: userId, email, nome, hospital, tipo_usuario },
-            process.env.JWT_SECRET,
-             { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
-          );
-
-
-          res.json({
-            success: true,
-            message: "Usuário cadastrado com sucesso",
-            data: {
-              token,
-              user: {
-                id: userId,
-                email,
-                nome,
-                hospital,
-                tipo_usuario
-              }
-            }
-          });
+    // Inserir no Supabase
+    const { data, error } = await supabase
+      .from('dados')
+      .insert([
+        {
+          email,
+          password: password_hash,
+          nome,
+          hospital,
+          tipo_usuario
         }
-      );
+      ])
+      .select()
+      .maybeSingle();
+
+    if (error) {
+      return res.status(500).json({ success: false, message: "Erro ao criar usuário", error });
+    }
+
+    // Gerar token normalmente (id pode vir do data.id)
+    const token = jwt.sign(
+      {
+        id: data.id,
+        email,
+        nome,
+        hospital,
+        tipo_usuario
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
+    );
+
+    res.json({
+      success: true,
+      message: "Usuário cadastrado com sucesso",
+      data: {
+        token,
+        user: {
+          id: data.id,
+          email,
+          nome,
+          hospital,
+          tipo_usuario
+        }
+      }
     });
   } catch (error) {
     res.status(500).json({ success: false, message: "Erro interno do servidor" });
   }
 });
+
+
 
 // Login de usuário
 app.post("/api/auth/login", [
