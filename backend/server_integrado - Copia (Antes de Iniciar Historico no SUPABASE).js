@@ -696,64 +696,55 @@ app.delete('/api/simulado/comentarios/:id', authenticateToken, (req, res) => {
 // Fim das rotas do simulado
 
 
-// Rota para obter estatísticas do histórico, migrada para Supabase-js
-app.get('/api/historico/estatisticas', authenticateToken, async (req, res) => {
-  const userId = req.user.id;
-  const { tipo, area, ano, palavraChave } = req.query;
+// Rota para obter o total absoluto de questões (sem filtro)
+app.get('/api/historico/estatisticas', authenticateToken, (req, res) => {
+const userId = req.user.id;
+const { tipo, area, ano, palavraChave } = req.query;
 
-  try {
-    // Buscar histórico do usuário logado, incluindo as questões relacionadas
-    let query = supabase
-      .from('historico_respostas')
-      .select('acertou, questoes(questao, subtema, tipo, area, ano)')
-      .eq('user_id', userId);
+let where = 'hr.user_id = ?';
+let params = [userId];
 
-    // Aplica os filtros dinamicamente
-    if (tipo) query = query.eq('questoes.tipo', tipo);
-    if (area) query = query.eq('questoes.area', area);
-    if (ano) query = query.eq('questoes.ano', parseInt(ano));
-    if (palavraChave) {
-      // Para busca textual, é necessário filtrar localmente
-      const { data: respostas, error } = await query;
-      if (error) return res.status(500).json({ error: 'Erro ao buscar dados', details: error });
-
-      // Filtro por palavra-chave (questao/subtema)
-      const filtradas = respostas.filter(r =>
-        (r.questoes.questao && r.questoes.questao.toLowerCase().includes(palavraChave.toLowerCase())) ||
-        (r.questoes.subtema && r.questoes.subtema.toLowerCase().includes(palavraChave.toLowerCase()))
-      );
-      return calcularEstatisticas(filtradas, res);
-    } else {
-      // Sem filtro de palavra-chave, apenas execute query e calcule agregados
-      const { data: respostas, error } = await query;
-      if (error) return res.status(500).json({ error: 'Erro ao buscar dados', details: error });
-      return calcularEstatisticas(respostas, res);
-    }
-  } catch (err) {
-    res.status(500).json({ error: 'Erro interno do servidor', details: err });
-  }
-});
-
-// Função auxiliar para cálculo dos agregados
-function calcularEstatisticas(respostas, res) {
-  const total_respostas = respostas.length;
-  const total_acertos = respostas.filter(r => r.acertou === 1).length;
-  const total_erros = respostas.filter(r => r.acertou === 0).length;
-  const taxa_acerto = total_respostas > 0
-    ? Math.round((100.0 * total_acertos / total_respostas) * 10) / 10
-    : 0.0;
-
-  res.json({
-    message: "success",
-    data: {
-      total_respostas,
-      total_acertos,
-      total_erros,
-      taxa_acerto
-    }
-  });
+if (tipo) {
+  where += ' AND q.tipo = ?';
+  params.push(tipo);
+}
+if (area) {
+  where += ' AND q.area = ?';
+  params.push(area);
+}
+if (ano) {
+  where += ' AND q.ano = ?';
+  params.push(parseInt(ano)); // se for string, converte para número
+}
+if (palavraChave) {
+  where += ' AND (q.questao LIKE ? OR q.subtema LIKE ?)';
+  params.push(`%${palavraChave}%`, `%${palavraChave}%`);
 }
 
+const sql = `
+  SELECT
+    COUNT(*) as total_respostas,
+    SUM(hr.acertou) as total_acertos,
+    SUM(CASE WHEN hr.acertou = 0 THEN 1 ELSE 0 END) as total_erros,
+    ROUND(100.0 * SUM(hr.acertou) / COUNT(*), 1) as taxa_acerto
+  FROM historico_respostas hr
+  LEFT JOIN questoes q ON hr.questao_id = q.id
+  WHERE ${where}
+`;
+
+db.get(sql, params, (err, row) => {
+  if (err) {
+    console.error('Erro ao executar estatísticas:', err);
+    return res.status(500).json({ error: "Erro ao buscar total de questões" });
+  }
+  row.taxa_acerto = row.taxa_acerto || 0.0;
+  res.json({
+    message: "success",
+    data: row
+  });
+});
+
+});
 
 // Rota para obter todas as questões com filtros opcionais e paginação
 app.get("/api/questoes", authenticateToken, (req, res) => {
@@ -954,29 +945,24 @@ app.put("/api/questoes/:id", authenticateToken, (req, res) => {
 });
 
 // Rota para deletar uma questão
-app.delete("/api/historico/deletar-resposta/:id", authenticateToken, async (req, res) => {
+app.delete("/api/historico/deletar-resposta/:id", authenticateToken, (req, res) => {
   const id = req.params.id;
-
-  try {
-    const { data, error } = await supabase
-      .from('historico_respostas')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      return res.status(400).json({ error: error.message || error });
+  db.run(
+    "DELETE FROM historico_respostas WHERE id = ?",
+    [id],
+    function(err) {
+      if (err) {
+        res.status(400).json({ error: err.message });
+        return;
+      }
+      if (this.changes === 0) {
+        res.status(404).json({ error: "Resposta não encontrada" });
+        return;
+      }
+      res.json({ message: "Resposta deletada com sucesso!" });
     }
-
-    if (!data || data.length === 0) {
-      return res.status(404).json({ error: "Resposta não encontrada" });
-    }
-
-    res.json({ message: "Resposta deletada com sucesso!" });
-  } catch (err) {
-    res.status(500).json({ error: 'Erro interno do servidor', details: err.message });
-  }
+  );
 });
-
 
 // Rota para obter estatísticas
 app.get("/api/estatisticas", authenticateToken, (req, res) => {
@@ -1010,59 +996,51 @@ app.get("/api/estatisticas", authenticateToken, (req, res) => {
 });
 
 // Buscar histórico de respostas do usuário logado
-app.get('/api/historico', authenticateToken, async (req, res) => {
+app.get('/api/historico', authenticateToken, (req, res) => {
   const userId = req.user.id;
   const { tipo, area, ano, palavraChave } = req.query;
 
-  try {
-    // Buscar respostas com dados da questão
-    const { data: respostas, error } = await supabase
-      .from('historico_respostas')
-      .select('*, questoes(*)')
-      .eq('user_id', userId);
+  let sql = `
+    SELECT hr.*, q.questao, q.id AS questao_id, q.tipo, q.area, q.ano
+    FROM historico_respostas hr
+    JOIN (
+      SELECT questao_id, MAX(data_resposta) AS max_data
+      FROM historico_respostas
+      WHERE user_id = ?
+      GROUP BY questao_id
+    ) ultimas ON hr.questao_id = ultimas.questao_id AND hr.data_resposta = ultimas.max_data
+    LEFT JOIN questoes q ON hr.questao_id = q.id
+    WHERE hr.user_id = ?
+  `;
+  let params = [userId, userId];
 
-    if (error) return res.status(500).json({ error: 'Erro ao buscar histórico', details: error });
-
-    // Filtrar últimas respostas por questao_id
-    const ultimasRespostasMap = new Map();
-    for (const r of respostas) {
-      const prev = ultimasRespostasMap.get(r.questao_id);
-      if (!prev || new Date(r.data_resposta) > new Date(prev.data_resposta)) {
-        ultimasRespostasMap.set(r.questao_id, r);
-      }
-    }
-    let ultimasRespostas = Array.from(ultimasRespostasMap.values());
-
-    // Aplicar filtros
-    if (tipo) {
-      ultimasRespostas = ultimasRespostas.filter(r => r.questoes.tipo === tipo);
-    }
-    if (area) {
-      ultimasRespostas = ultimasRespostas.filter(r => r.questoes.area === area);
-    }
-    if (ano) {
-      ultimasRespostas = ultimasRespostas.filter(r => r.questoes.ano === parseInt(ano));
-    }
-    if (palavraChave) {
-      const keyword = palavraChave.toLowerCase();
-      ultimasRespostas = ultimasRespostas.filter(r => 
-        (r.questoes.questao && r.questoes.questao.toLowerCase().includes(keyword)) ||
-        (r.questoes.subtema && r.questoes.subtema.toLowerCase().includes(keyword))
-      );
-    }
-
-    // Ordenar por data_resposta decrescente
-    ultimasRespostas.sort((a, b) => new Date(b.data_resposta) - new Date(a.data_resposta));
-
-    res.json({ data: ultimasRespostas });
-  } catch (err) {
-    res.status(500).json({ error: 'Erro interno do servidor', details: err.message });
+  if (tipo) {
+    sql += ' AND q.tipo = ?';
+    params.push(tipo);
   }
+  if (area) {
+    sql += ' AND q.area = ?';
+    params.push(area);
+  }
+  if (ano) {
+    sql += ' AND q.ano = ?';
+    params.push(parseInt(ano));
+  }
+  if (palavraChave) {
+    sql += ' AND (q.questao LIKE ? OR q.subtema LIKE ?)';
+    params.push(`%${palavraChave}%`, `%${palavraChave}%`);
+  }
+  sql += ' ORDER BY hr.data_resposta DESC';
+
+  db.all(sql, params, (err, rows) => {
+    if (err)
+      return res.status(500).json({ error: 'Erro ao buscar histórico' });
+    res.json({ data: rows });
+  });
 });
 
-
 // Salvar uma nova resposta no histórico
-app.post('/api/historico/salvar-resposta', authenticateToken, async (req, res) => {
+app.post('/api/historico/salvar-resposta', authenticateToken, (req, res) => {
   const userId = req.user.id;
   const { questao_id, resposta_usuario, resposta_correta, acertou } = req.body;
 
@@ -1070,77 +1048,43 @@ app.post('/api/historico/salvar-resposta', authenticateToken, async (req, res) =
     return res.status(400).json({ error: 'Dados incompletos para salvar resposta' });
   }
 
-  try {
-    // Deletar resposta anterior para a questão do usuário
-    const { error: deleteError } = await supabase
-      .from('historico_respostas')
-      .delete()
-      .eq('user_id', userId)
-      .eq('questao_id', questao_id);
-
-    if (deleteError) {
-      return res.status(500).json({ error: 'Erro ao deletar resposta anterior', details: deleteError });
+db.run(`DELETE FROM historico_respostas WHERE user_id = ? AND questao_id = ?`, [userId, questao_id], (err) => {
+  if (err) return res.status(500).json({ error: 'Erro ao deletar resposta anterior' });
+  db.run(`INSERT INTO historico_respostas (user_id, questao_id, resposta_usuario, resposta_correta, acertou, data_resposta)
+    VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+    [userId, questao_id, resposta_usuario, resposta_correta, acertou],
+    function (err) {
+      if (err) return res.status(500).json({ error: 'Erro ao salvar resposta' });
+      res.json({ message: 'Resposta salva com sucesso', id: this.lastID });
     }
-
-    // Inserir nova resposta
-    const { data, error: insertError } = await supabase
-      .from('historico_respostas')
-      .insert({
-        user_id: userId,
-        questao_id,
-        resposta_usuario,
-        resposta_correta,
-        acertou,
-        data_resposta: new Date().toISOString()
-      })
-      .select()
-      .maybeSingle();
-
-    if (insertError) {
-      return res.status(500).json({ error: 'Erro ao salvar resposta', details: insertError });
-    }
-
-    res.json({ message: 'Resposta salva com sucesso', id: data.id });
-  } catch (err) {
-    res.status(500).json({ error: 'Erro interno do servidor', details: err.message });
-  }
+  );
+});
 });
 
-// Rota para estatísticas do histórico do usuário logado (Supabase-js)
-app.get('/api/historico/estatisticas', authenticateToken, async (req, res) => {
+// Rota para estatísticas do histórico do usuário logado
+app.get('/api/historico/estatisticas', authenticateToken, (req, res) => {
   const userId = req.user.id;
-
-  try {
-    // Buscar todas as respostas do usuário
-    const { data: respostas, error } = await supabase
-      .from('historico_respostas')
-      .select('acertou')
-      .eq('user_id', userId);
-
-    if (error) {
-      return res.status(500).json({ error: 'Erro ao buscar estatísticas', details: error });
-    }
-
-    // Calcular estatísticas agregadas manualmente
-    const total_respostas = respostas.length;
-    const total_acertos = respostas.filter(r => r.acertou === 1).length;
-    const total_erros = respostas.filter(r => r.acertou === 0).length;
-    const taxa_acerto = total_respostas > 0
-      ? Math.round((100.0 * total_acertos / total_respostas) * 10) / 10
-      : 0.0;
-
-    res.json({
-      message: "success",
-      data: {
-        total_respostas,
-        total_acertos,
-        total_erros,
-        taxa_acerto
+  db.get(
+    `SELECT
+      COUNT(*) as total_respostas,
+      SUM(acertou) as total_acertos,
+      SUM(CASE WHEN acertou = 0 THEN 1 ELSE 0 END) as total_erros,
+      ROUND(100.0 * SUM(acertou) / COUNT(*), 1) as taxa_acerto
+    FROM historico_respostas
+    WHERE user_id = ?`,
+    [userId],
+    (err, row) => {
+      if (err) {
+        return res.status(500).json({ error: 'Erro ao buscar estatísticas' });
       }
-    });
-  } catch (err) {
-    res.status(500).json({ error: 'Erro ao buscar estatísticas', details: err });
-  }
+      // Garantir que não retorne null para taxa_acerto
+      row.taxa_acerto = row.taxa_acerto || 0.0;
+      res.json({
+        message: "success",
+        data: row
+      });
+    }
+  );
 });
 
 // Iniciar o servidor
