@@ -101,28 +101,7 @@ const db = new sqlite3.Database("./questoes.db", (err) => {
           console.log("Tabela 'questoes' criada ou já existe.");
         }
       }
-    );
-
-    // Criar tabela de usuários se não existir
-    db.run(
-      `CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        email TEXT UNIQUE NOT NULL,
-        password_hash TEXT NOT NULL,
-        nome TEXT NOT NULL,
-        hospital TEXT NOT NULL,
-        tipo_usuario TEXT NOT NULL CHECK (tipo_usuario IN ('R1', 'R2', 'R3', 'R4', 'R5', 'Ortopedista')),
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      )`,
-      (err) => {
-        if (err) {
-          console.error("Erro ao criar tabela de usuários:" + err.message);
-        } else {
-          console.log("Tabela 'users' criada ou já existe.");
-        }
-      }
-    );
+  );
   }
 });
 
@@ -262,53 +241,57 @@ app.post("/api/auth/login", [
   const { email, password } = req.body;
 
   try {
-    db.get("SELECT * FROM users WHERE email = ?", [email], async (err, user) => {
-      if (err) {
-        return res.status(500).json({ success: false, message: "Erro interno do servidor" });
-      }
+    // Busque o usuário na tabela 'dados' do Supabase
+    const { data: user, error } = await supabase
+      .from('dados')
+      .select('*')
+      .eq('email', email)
+      .maybeSingle();
 
-      if (!user) {
-        return res.status(401).json({
-          success: false,
-          message: "Credenciais inválidas"
-        });
-      }
-
-      // Verificar senha
-      const isValidPassword = await bcrypt.compare(password, user.password_hash);
-      if (!isValidPassword) {
-        return res.status(401).json({
-          success: false,
-          message: "Credenciais inválidas"
-        });
-      }
-
-      // Gerar token JWT
-      const token = jwt.sign(
-        { id: user.id, email: user.email, nome: user.nome, hospital: user.hospital, tipo_usuario: user.tipo_usuario },
-        process.env.JWT_SECRET,
-        { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
-      );
-
-      res.json({
-        success: true,
-        message: "Login realizado com sucesso",
-        data: {
-          token,
-          user: {
-            id: user.id,
-            email: user.email,
-            nome: user.nome,
-            hospital: user.hospital,
-            tipo_usuario: user.tipo_usuario
-          }
-        }
+    if (error || !user) {
+      return res.status(401).json({
+        success: false,
+        message: "Credenciais inválidas"
       });
+    }
+
+    // Verificar senha usando bcrypt
+    const isValidPassword = await bcrypt.compare(password, user.password);
+
+    if (!isValidPassword) {
+      return res.status(401).json({
+        success: false,
+        message: "Credenciais inválidas"
+      });
+    }
+
+    // Gerar token JWT
+    const token = jwt.sign(
+      { id: user.id, email: user.email, nome: user.nome, hospital: user.hospital, tipo_usuario: user.tipo_usuario },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
+    );
+
+    res.json({
+      success: true,
+      message: "Login realizado com sucesso",
+      data: {
+        token,
+        user: {
+          id: user.id,
+          email: user.email,
+          nome: user.nome,
+          hospital: user.hospital,
+          tipo_usuario: user.tipo_usuario
+        }
+      }
     });
+
   } catch (error) {
     res.status(500).json({ success: false, message: "Erro interno do servidor" });
   }
 });
+
 
 // Obter perfil do usuário logado
 app.get("/api/auth/profile", authenticateToken, (req, res) => {
@@ -331,7 +314,7 @@ app.put("/api/auth/profile", authenticateToken, [
   body('nome').notEmpty().withMessage('Nome é obrigatório'),
   body('hospital').notEmpty().withMessage('Hospital é obrigatório'),
   body('tipo_usuario').isIn(['R1', 'R2', 'R3', 'R4', 'R5', 'Ortopedista']).withMessage('Tipo de usuário inválido')
-], (req, res) => {
+], async (req, res) => {  // Usar async aqui para await
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({
@@ -343,81 +326,98 @@ app.put("/api/auth/profile", authenticateToken, [
 
   const { nome, hospital, tipo_usuario } = req.body;
 
-  db.run(
-    `UPDATE users SET nome = ?, hospital = ?, tipo_usuario = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
-    [nome, hospital, tipo_usuario, req.user.id],
-    function (err) {
-      if (err) {
-        return res.status(500).json({ success: false, message: "Erro ao atualizar perfil" });
-      }
+  try {
+    const { data, error } = await supabase
+      .from('dados')
+      .update({ nome, hospital, tipo_usuario })
+      .eq('id', req.user.id)
+      .select()
+      .maybeSingle();
 
-      res.json({
-        success: true,
-        message: "Perfil atualizado com sucesso",
-        data: {
-          user: {
-            id: req.user.id,
-            email: req.user.email,
-            nome,
-            hospital,
-            tipo_usuario
-          }
-        }
-      });
-    }
-  );
-});
-
-// Rotas de Usuários (Administração)
-
-// Listar todos os usuários
-app.get("/api/users", authenticateToken, (req, res) => {
-  db.all("SELECT id, email, nome, hospital, tipo_usuario, created_at FROM users ORDER BY created_at DESC", [], (err, rows) => {
-    if (err) {
-      return res.status(500).json({ success: false, message: "Erro ao buscar usuários" });
+    if (error) {
+      return res.status(500).json({ success: false, message: "Erro ao atualizar perfil" });
     }
 
     res.json({
       success: true,
-      data: rows
+      message: "Perfil atualizado com sucesso",
+      data: {
+        user: {
+          id: data.id,
+          email: data.email,
+          nome: data.nome,
+          hospital: data.hospital,
+          tipo_usuario: data.tipo_usuario
+        }
+      }
     });
-  });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Erro interno do servidor" });
+  }
 });
 
-// Exportar usuários para Excel
-app.get("/api/users/export", authenticateToken, (req, res) => {
-  db.all("SELECT id, email, nome, hospital, tipo_usuario, created_at FROM users ORDER BY created_at DESC", [], (err, rows) => {
-    if (err) {
-      return res.status(500).json({ success: false, message: "Erro ao buscar usuários" });
+
+// Rotas de Usuários (Administração)
+
+// Listar todos os usuários
+app.get("/api/users", authenticateToken, async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('dados')
+      .select('id, email, nome, hospital, tipo_usuario, created_at')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      return res.status(500).json({ success: false, message: "Erro ao buscar usuários", error });
     }
 
-    try {
-      // Criar workbook e worksheet
-      const workbook = XLSX.utils.book_new();
-      const worksheet = XLSX.utils.json_to_sheet(rows.map(row => ({
-        'ID': row.id,
-        'Email': row.email,
-        'Nome': row.nome,
-        'Hospital': row.hospital,
-        'Tipo de Usuário': row.tipo_usuario,
-        'Data de Cadastro': new Date(row.created_at).toLocaleDateString('pt-BR')
-      })));
+    res.json({
+      success: true,
+      data
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Erro interno do servidor" });
+  }
+});
 
-      // Adicionar worksheet ao workbook
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Usuários');
 
-      // Gerar buffer do arquivo Excel
-      const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+app.get("/api/users/export", authenticateToken, async (req, res) => {
+  try {
+    const { data: users, error } = await supabase
+      .from('dados')
+      .select('id, email, nome, hospital, tipo_usuario, created_at')
+      .order('created_at', { ascending: false });
 
-      // Configurar headers para download
-      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-      res.setHeader('Content-Disposition', `attachment; filename=usuarios_ortopedia_${new Date().toISOString().split('T')[0]}.xlsx`);
-
-      res.send(excelBuffer);
-    } catch (error) {
-      res.status(500).json({ success: false, message: "Erro ao gerar arquivo Excel" });
+    if (error) {
+      return res.status(500).json({ success: false, message: "Erro ao buscar usuários", error });
     }
-  });
+
+    // Criar workbook e worksheet
+    const workbook = XLSX.utils.book_new();
+    const worksheet = XLSX.utils.json_to_sheet(users.map(user => ({
+      'ID': user.id,
+      'Email': user.email,
+      'Nome': user.nome,
+      'Hospital': user.hospital,
+      'Tipo de Usuário': user.tipo_usuario,
+      'Data de Cadastro': new Date(user.created_at).toLocaleDateString('pt-BR')
+    })));
+
+    // Adicionar worksheet ao workbook
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Usuários');
+
+    // Gerar buffer do arquivo Excel
+    const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+
+    // Configurar headers para download
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename=usuarios_ortopedia_${new Date().toISOString().split('T')[0]}.xlsx`);
+
+    res.send(excelBuffer);
+
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Erro ao gerar arquivo Excel" });
+  }
 });
 
 // Rotas da API de Questões (agora protegidas)
@@ -629,38 +629,40 @@ app.get('/api/simulado/questoes/:id/comentarios', authenticateToken, (req, res) 
 });
 
 // Adicionar comentário
-app.post('/api/simulado/questoes/:id/comentarios', authenticateToken, (req, res) => {
+app.post('/api/simulado/questoes/:id/comentarios', authenticateToken, async (req, res) => {
   const questaoId = req.params.id;
   const { texto } = req.body;
   const usuarioId = req.user.id;
-  
+
   if (!texto || texto.trim().length === 0) {
     return res.status(400).json({ error: 'Texto do comentário é obrigatório' });
   }
-  
-  db.run(`
-    INSERT INTO comentarios (questao_id, usuario_id, texto, created_at)
-    VALUES (?, ?, ?, datetime('now'))
-  `, [questaoId, usuarioId, texto.trim()], function(err) {
-    if (err) {
-      return res.status(500).json({ error: 'Erro ao adicionar comentário' });
+
+  try {
+    // Inserir no Supabase (ajuste nome da tabela e colunas conforme seu schema)
+    const { data: insertedComment, error } = await supabase
+      .from('comentarios')
+      .insert({
+        questao_id: questaoId,
+        usuario_id: usuarioId,
+        texto: texto.trim(),
+        created_at: new Date().toISOString()
+      })
+      .select()
+      .maybeSingle();
+
+    if (error) {
+      return res.status(500).json({ error: 'Erro ao adicionar comentário', details: error });
     }
-    
-    // Buscar o comentário criado com o nome do autor
-    db.get(`
-      SELECT c.*, u.nome as autor_nome
-      FROM comentarios c
-      JOIN users u ON c.usuario_id = u.id
-      WHERE c.id = ?
-    `, [this.lastID], (err, row) => {
-      if (err) {
-        return res.status(500).json({ error: 'Erro ao buscar comentário criado' });
-      }
-      
-      res.status(201).json(row);
-    });
-  });
+
+    // Se necessário, retornar o comentário criado. Atenção: usuário pode ter que ser buscado separadamente para pegar nome.
+    res.status(201).json(insertedComment);
+
+  } catch (err) {
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
 });
+
 
 // Deletar comentário (apenas o próprio usuário)
 app.delete('/api/simulado/comentarios/:id', authenticateToken, (req, res) => {

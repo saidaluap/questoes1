@@ -13,6 +13,15 @@ const path = require("path");
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+const supabase = require('./supabaseClient');
+
+
+
+app.use(cors());
+app.use(express.json());
+console.log("DEPLOY VERSION CHECADA 07/10/2025 16:50");
+
+
 // Caminho para o arquivo Excel
 const EXCEL_FILE_PATH = path.join(__dirname, "usuarios_ortopedia.xlsx");
 
@@ -61,8 +70,6 @@ const updateExcelFile = (userData) => {
   }
 };
 
-app.use(cors());
-app.use(express.json());
 
 // Conectar ao banco de dados SQLite
 const db = new sqlite3.Database("./questoes.db", (err) => {
@@ -152,6 +159,7 @@ app.post("/api/auth/register", [
   body('hospital').notEmpty().withMessage('Hospital é obrigatório'),
   body('tipo_usuario').isIn(['R1', 'R2', 'R3', 'R4', 'R5', 'Ortopedista']).withMessage('Tipo de usuário inválido')
 ], async (req, res) => {
+  console.log("Recebi cadastro:", req.body);
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({
@@ -164,77 +172,78 @@ app.post("/api/auth/register", [
   const { email, password, nome, hospital, tipo_usuario } = req.body;
 
   try {
-    // Verificar se email já existe
-    db.get("SELECT id FROM users WHERE email = ?", [email], async (err, row) => {
-      if (err) {
-        return res.status(500).json({ success: false, message: "Erro interno do servidor" });
-      }
-      
-      if (row) {
-        return res.status(400).json({
-          success: false,
-          message: "Email já está em uso",
-          errors: [{ field: "email", message: "Email já está em uso" }]
-        });
-      }
+    // Checar se o email já existe no Supabase
+    const { data: existingUser } = await supabase
+      .from('dados')
+      .select('id')
+      .eq('email', email)
+      .maybeSingle();
 
-      // Hash da senha
-      const saltRounds = parseInt(process.env.BCRYPT_ROUNDS) || 12;
-      const password_hash = await bcrypt.hash(password, saltRounds);
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: "Email já está em uso",
+        errors: [{ field: "email", message: "Email já está em uso" }]
+      });
+    }
 
-      // Inserir usuário
-      db.run(
-        `INSERT INTO users (email, password_hash, nome, hospital, tipo_usuario) VALUES (?, ?, ?, ?, ?)`,
-        [email, password_hash, nome, hospital, tipo_usuario],
-        function (err) {
-          if (err) {
-            return res.status(500).json({ success: false, message: "Erro ao criar usuário" });
-          }
+    // Gerar hash da senha
+    const saltRounds = parseInt(process.env.BCRYPT_ROUNDS) || 12;
+    const password_hash = await bcrypt.hash(password, saltRounds);
 
-          const userId = this.lastID;
-
-          // Atualizar planilha Excel automaticamente (não bloquear se falhar)
-          try {
-            updateExcelFile({
-              id: userId,
-              nome,
-              email,
-              hospital,
-              tipo_usuario
-            });
-          } catch (excelError) {
-            console.error('Erro ao atualizar Excel:', excelError);
-            // Não falhar o cadastro se houver erro na planilha
-          }
-
-          // Gerar token JWT
-          const token = jwt.sign(
-            { id: userId, email, nome, hospital, tipo_usuario },
-            process.env.JWT_SECRET,
-            { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
-          );
-
-          res.json({
-            success: true,
-            message: "Usuário cadastrado com sucesso",
-            data: {
-              token,
-              user: {
-                id: userId,
-                email,
-                nome,
-                hospital,
-                tipo_usuario
-              }
-            }
-          });
+    // Inserir no Supabase
+    const { data, error } = await supabase
+      .from('dados')
+      .insert([
+        {
+          email,
+          password: password_hash,
+          nome,
+          hospital,
+          tipo_usuario
         }
-      );
+      ])
+      .select()
+      .maybeSingle();
+
+    if (error) {
+      console.error("Erro ao criar usuário no Supabase:", error);
+      return res.status(500).json({ success: false, message: "Erro ao criar usuário", error });
+    }
+
+    // Gerar token normalmente (id pode vir do data.id)
+    const token = jwt.sign(
+      {
+        id: data.id,
+        email,
+        nome,
+        hospital,
+        tipo_usuario
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
+    );
+
+    res.json({
+      success: true,
+      message: "Usuário cadastrado com sucesso",
+      data: {
+        token,
+        user: {
+          id: data.id,
+          email,
+          nome,
+          hospital,
+          tipo_usuario
+        }
+      }
     });
   } catch (error) {
     res.status(500).json({ success: false, message: "Erro interno do servidor" });
   }
 });
+
+
 
 // Login de usuário
 app.post("/api/auth/login", [
@@ -253,53 +262,57 @@ app.post("/api/auth/login", [
   const { email, password } = req.body;
 
   try {
-    db.get("SELECT * FROM users WHERE email = ?", [email], async (err, user) => {
-      if (err) {
-        return res.status(500).json({ success: false, message: "Erro interno do servidor" });
-      }
+    // Busque o usuário na tabela 'dados' do Supabase
+    const { data: user, error } = await supabase
+      .from('dados')
+      .select('*')
+      .eq('email', email)
+      .maybeSingle();
 
-      if (!user) {
-        return res.status(401).json({
-          success: false,
-          message: "Credenciais inválidas"
-        });
-      }
-
-      // Verificar senha
-      const isValidPassword = await bcrypt.compare(password, user.password_hash);
-      if (!isValidPassword) {
-        return res.status(401).json({
-          success: false,
-          message: "Credenciais inválidas"
-        });
-      }
-
-      // Gerar token JWT
-      const token = jwt.sign(
-        { id: user.id, email: user.email, nome: user.nome, hospital: user.hospital, tipo_usuario: user.tipo_usuario },
-        process.env.JWT_SECRET,
-        { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
-      );
-
-      res.json({
-        success: true,
-        message: "Login realizado com sucesso",
-        data: {
-          token,
-          user: {
-            id: user.id,
-            email: user.email,
-            nome: user.nome,
-            hospital: user.hospital,
-            tipo_usuario: user.tipo_usuario
-          }
-        }
+    if (error || !user) {
+      return res.status(401).json({
+        success: false,
+        message: "Credenciais inválidas"
       });
+    }
+
+    // Verificar senha usando bcrypt
+    const isValidPassword = await bcrypt.compare(password, user.password);
+
+    if (!isValidPassword) {
+      return res.status(401).json({
+        success: false,
+        message: "Credenciais inválidas"
+      });
+    }
+
+    // Gerar token JWT
+    const token = jwt.sign(
+      { id: user.id, email: user.email, nome: user.nome, hospital: user.hospital, tipo_usuario: user.tipo_usuario },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
+    );
+
+    res.json({
+      success: true,
+      message: "Login realizado com sucesso",
+      data: {
+        token,
+        user: {
+          id: user.id,
+          email: user.email,
+          nome: user.nome,
+          hospital: user.hospital,
+          tipo_usuario: user.tipo_usuario
+        }
+      }
     });
+
   } catch (error) {
     res.status(500).json({ success: false, message: "Erro interno do servidor" });
   }
 });
+
 
 // Obter perfil do usuário logado
 app.get("/api/auth/profile", authenticateToken, (req, res) => {
@@ -413,7 +426,13 @@ app.get("/api/users/export", authenticateToken, (req, res) => {
 
 // Rotas da API de Questões (agora protegidas)
 
-// Rotas do Simulado integradas diretamente
+// Rota para obter o total absoluto de questões (sem filtro)
+app.get('/api/totalQuestoes', (req, res) => {
+  db.get('SELECT COUNT(*) as total FROM questoes', [], (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ totalQuestoes: row.total });
+  });
+});
 
 // Buscar questões para o simulado (5 por página)
 app.get('/api/simulado/questoes', authenticateToken, (req, res) => {
@@ -455,22 +474,21 @@ app.get('/api/simulado/questoes', authenticateToken, (req, res) => {
     if (err) {
       return res.status(500).json({ error: 'Erro ao buscar questões' });
     }
-    
-    // Processar alternativas
-    const questoes = rows.map(row => {
-      const alternativas = row.alternativas ? 
-        row.alternativas.split(';;;').map(alt => {
-          const [id, letra, texto] = alt.split('|');
-          return { id: parseInt(id), letra, texto };
-        }) : [];
-      
-      return {
-        ...row,
-        alternativas,
-        alternativas: undefined // Remove o campo concatenado
-      };
-    });
-    
+// Processar alternativas
+const questoes = rows.map(row => {
+  const alternativas = row.alternativas ? 
+    row.alternativas.split(';;;').map(alt => {
+      const [id, letra, texto] = alt.split('|');
+      return { id: parseInt(id), letra, texto };
+    }) : [];
+
+  return {
+    ...row,
+    alternativas,
+    alternativas: undefined // Remove o campo concatenado
+  };
+});
+
     // Contar total de questões para paginação
     let countQuery = 'SELECT COUNT(*) as total FROM questoes WHERE 1=1';
     const countParams = [];
@@ -681,14 +699,53 @@ app.delete('/api/simulado/comentarios/:id', authenticateToken, (req, res) => {
 
 
 // Rota para obter o total absoluto de questões (sem filtro)
-app.get("/api/questoes/total", authenticateToken, (req, res) => {
-  const sql = "SELECT COUNT(*) as total FROM questoes";
-  db.get(sql, [], (err, row) => {
-    if (err) {
-      return res.status(500).json({ error: "Erro ao buscar total de questões" });
-    }
-    res.json({ total: row.total });
+app.get('/api/historico/estatisticas', authenticateToken, (req, res) => {
+const userId = req.user.id;
+const { tipo, area, ano, palavraChave } = req.query;
+
+let where = 'hr.user_id = ?';
+let params = [userId];
+
+if (tipo) {
+  where += ' AND q.tipo = ?';
+  params.push(tipo);
+}
+if (area) {
+  where += ' AND q.area = ?';
+  params.push(area);
+}
+if (ano) {
+  where += ' AND q.ano = ?';
+  params.push(parseInt(ano)); // se for string, converte para número
+}
+if (palavraChave) {
+  where += ' AND (q.questao LIKE ? OR q.subtema LIKE ?)';
+  params.push(`%${palavraChave}%`, `%${palavraChave}%`);
+}
+
+const sql = `
+  SELECT
+    COUNT(*) as total_respostas,
+    SUM(hr.acertou) as total_acertos,
+    SUM(CASE WHEN hr.acertou = 0 THEN 1 ELSE 0 END) as total_erros,
+    ROUND(100.0 * SUM(hr.acertou) / COUNT(*), 1) as taxa_acerto
+  FROM historico_respostas hr
+  LEFT JOIN questoes q ON hr.questao_id = q.id
+  WHERE ${where}
+`;
+
+db.get(sql, params, (err, row) => {
+  if (err) {
+    console.error('Erro ao executar estatísticas:', err);
+    return res.status(500).json({ error: "Erro ao buscar total de questões" });
+  }
+  row.taxa_acerto = row.taxa_acerto || 0.0;
+  res.json({
+    message: "success",
+    data: row
   });
+});
+
 });
 
 // Rota para obter todas as questões com filtros opcionais e paginação
@@ -762,17 +819,39 @@ app.get("/api/questoes", authenticateToken, (req, res) => {
       countParams.push(`%${palavraChave}%`, `%${palavraChave}%`);
     }
 
-    // Construir SQL para estatísticas filtradas
-    let statsSql = `
-      SELECT 
-        COUNT(*) as total,
-        SUM(CASE WHEN tipo = 'TEOT' THEN 1 ELSE 0 END) as teot,
-        SUM(CASE WHEN tipo = 'TARO' THEN 1 ELSE 0 END) as taro,
-        COUNT(DISTINCT area) as areas
-      FROM questoes
-      WHERE 1=1
-    `;
-    let statsParams = [...countParams]; // Mesmos filtros do count
+// Repita os mesmos filtros do countSql aqui para statsSql
+let statsSql = `
+  SELECT
+    COUNT(*) as total,
+    SUM(CASE WHEN tipo = 'TEOT' THEN 1 ELSE 0 END) as teot,
+    SUM(CASE WHEN tipo = 'TARO' THEN 1 ELSE 0 END) as taro,
+    COUNT(DISTINCT area) as areas
+  FROM questoes
+  WHERE 1=1
+`;
+
+// Aqui, repita os mesmos IFs de filtro do countSql!
+let statsParams = [];
+if (tipo) {
+  statsSql += " AND tipo = ?";
+  statsParams.push(tipo);
+}
+if (area) {
+  statsSql += " AND area = ?";
+  statsParams.push(area);
+}
+if (subtema) {
+  statsSql += " AND subtema = ?";
+  statsParams.push(subtema);
+}
+if (ano) {
+  statsSql += " AND ano = ?";
+  statsParams.push(parseInt(ano));
+}
+if (palavraChave) {
+  statsSql += " AND (questao LIKE ? OR subtema LIKE ?)";
+  statsParams.push(`%${palavraChave}%`, `%${palavraChave}%`);
+}
 
     db.get(countSql, countParams, (err, countRow) => {
       if (err) {
@@ -780,36 +859,41 @@ app.get("/api/questoes", authenticateToken, (req, res) => {
         return;
       }
 
-      db.get(statsSql, statsParams, (err, statsRow) => {
-        if (err) {
-          res.status(500).json({ error: "Erro ao calcular estatísticas filtradas" });
-          return;
-        }
+db.get(statsSql, statsParams, (err, statsRow) => {
+  if (err) {
+    console.error('--- ERRO AO EXECUTAR statsSql ---');
+    console.error('Erro:', err);
+    console.error('Query:', statsSql);
+    console.error('Params:', statsParams);
+    res.status(500).json({ error: "Erro ao calcular estatísticas filtradas" });
+    return;
+  }
 
-        const totalPages = Math.ceil(countRow.total / limit);
+  const totalPages = Math.ceil(countRow.total / limit);
 
-        res.json({
-          message: "success",
-          data: questoes,
-          pagination: {
-            currentPage: page,
-            totalPages,
-            totalItems: countRow.total,
-            hasNext: page < totalPages,
-            hasPrev: page > 1,
-            limit
-          },
-          stats: {
-            total: statsRow.total,
-            teot: statsRow.teot,
-            taro: statsRow.taro,
-            areas: statsRow.areas
-          }
-        });
+  res.json({
+    message: "success",
+    data: questoes,
+    pagination: {
+      currentPage: page,
+      totalPages,
+      totalItems: countRow.total,
+      hasNext: page < totalPages,
+      hasPrev: page > 1,
+      limit
+    },
+    stats: {
+      total: statsRow.total,
+      teot: statsRow.teot,
+      taro: statsRow.taro,
+      areas: statsRow.areas
+    }
+  });
+});
       });
     });
   });
-});
+
 
 
 // Rota para adicionar uma nova questão
