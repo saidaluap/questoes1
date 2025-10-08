@@ -14,7 +14,7 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 const supabase = require('./supabaseClient');
-
+const user = supabase.auth.getUser();
 
 
 app.use(cors());
