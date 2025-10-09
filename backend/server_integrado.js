@@ -168,6 +168,16 @@ app.post("/api/auth/register", [
       });
     }
 
+  // *** INSIRA AQUI o cadastro no SUPABASE AUTH ***
+  const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
+  email,
+  password,
+  email_confirm: true // ou false, conforme sua política
+  });
+  if (authError) {
+  return res.status(500).json({ success: false, message: "Erro ao registrar no Auth", error: authError });
+}
+
     // Gerar hash da senha
     const saltRounds = parseInt(process.env.BCRYPT_ROUNDS) || 12;
     const password_hash = await bcrypt.hash(password, saltRounds);
