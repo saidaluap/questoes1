@@ -230,7 +230,7 @@ const handleResponder = async (questionId) => {
   };
 
   try {
-    const response = await fetch('${API_URL}/api/historico/salvar-resposta', {
+    const response = await fetch(`${API_URL}/api/historico/salvar-resposta`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
