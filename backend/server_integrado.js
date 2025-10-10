@@ -1101,6 +1101,7 @@ app.post('/api/historico/salvar-resposta', authenticateToken, async (req, res) =
   }
 });
 
+
 // Rota para estatísticas do histórico do usuário logado (Supabase-js)
 app.get('/api/historico/estatisticas', authenticateToken, async (req, res) => {
   const userId = req.user.id;
