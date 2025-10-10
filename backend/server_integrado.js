@@ -152,50 +152,64 @@ app.post("/api/auth/register", [
 
   const { email, password, nome, hospital, tipo_usuario } = req.body;
 
-  try {
-    // Checar se o email já existe no Supabase
-    const { data: existingUser } = await supabase
-      .from('dados')
-      .select('id')
-      .eq('email', email)
-      .maybeSingle();
+try {
+  // 1º - Checa se email já existe na tabela "dados"
+  const { data: existingUser } = await supabase
+    .from('dados')
+    .select('id')
+    .eq('email', email)
+    .maybeSingle();
+  if (existingUser) {
+    return res.status(400).json({
+      success: false,
+      message: "Email já está em uso",
+      errors: [{ field: "email", message: "Email já está em uso" }]
+    });
+  }
 
-    if (existingUser) {
-      return res.status(400).json({
-        success: false,
-        message: "Email já está em uso",
-        errors: [{ field: "email", message: "Email já está em uso" }]
-      });
-    }
+  // 2º - Checa se email já existe no Supabase Auth
+  const { data: userList, error: listUserErr } = await supabase.auth.admin.listUsers();
+  if (listUserErr) {
+    return res.status(500).json({ success: false, message: "Erro ao consultar Auth" });
+  }
+  const emailExists = userList?.users?.some(u => u.email === email);
+  if (emailExists) {
+    return res.status(400).json({
+      success: false,
+      message: "Email já está em uso no Auth",
+      errors: [{ field: "email", message: "Email já está em uso no Auth" }]
+    });
+  }
+
 
   // *** INSIRA AQUI o cadastro no SUPABASE AUTH ***
-  const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
+const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
   email,
   password,
-  email_confirm: true // ou false, conforme sua política
-  });
-  if (authError) {
+  email_confirm: true // ou false
+});
+if (authError) {
   return res.status(500).json({ success: false, message: "Erro ao registrar no Auth", error: authError });
 }
 
-    // Gerar hash da senha
-    const saltRounds = parseInt(process.env.BCRYPT_ROUNDS) || 12;
-    const password_hash = await bcrypt.hash(password, saltRounds);
+// Pegue o id do usuário recém-criado pelo Auth:
+const userId = authUser.user.id;
 
-    // Inserir no Supabase
-    const { data, error } = await supabase
-      .from('dados')
-      .insert([
-        {
-          email,
-          password: password_hash,
-          nome,
-          hospital,
-          tipo_usuario
-        }
-      ])
-      .select()
-      .maybeSingle();
+// Agora insira NA TABELA PERSONALIZADA usando esse id!
+const { data, error } = await supabase
+  .from('dados')
+  .insert([
+    {
+      id: userId,      // ATENÇÃO: novo campo!
+      email,
+      nome,
+      hospital,
+      tipo_usuario
+    }
+  ])
+  .select()
+  .maybeSingle();
+
 
     if (error) {
       console.error("Erro ao criar usuário no Supabase:", error);
