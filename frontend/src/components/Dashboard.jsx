@@ -247,6 +247,8 @@ const handleResponder = async (questionId) => {
     if (response.ok) {
       const data = await response.json();
       console.log('Resposta salva no histórico com sucesso');
+
+      
       // Atualiza o estado local do histórico para refletir a nova resposta imediatamente
       setHistorico(prev => {
   const novoHistorico = [
@@ -259,7 +261,9 @@ const handleResponder = async (questionId) => {
 });
 
     } else {
-      console.error('Erro ao salvar resposta no histórico');
+    const errorMsg = await response.text();
+    console.error('Erro ao salvar resposta no histórico:', errorMsg);
+    alert('Erro ao salvar resposta: ' + errorMsg); // Opcional, para informar o usuário na interface
     }
   } catch (error) {
     console.error('Erro ao salvar resposta:', error);
