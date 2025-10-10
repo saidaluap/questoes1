@@ -253,56 +253,25 @@ app.post("/api/auth/login", [
   const { email, password } = req.body;
 
   try {
-    // Busque o usuário na tabela 'dados' do Supabase
-    const { data: user, error } = await supabase
-      .from('dados')
-      .select('*')
-      .eq('email', email)
-      .maybeSingle();
-
-    if (error || !user) {
-      return res.status(401).json({
-        success: false,
-        message: "Credenciais inválidas"
-      });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error || !data.session) {
+      return res.status(401).json({ success: false, message: "Credenciais inválidas" });
     }
-
-    // Verificar senha usando bcrypt
-    const isValidPassword = await bcrypt.compare(password, user.password);
-
-    if (!isValidPassword) {
-      return res.status(401).json({
-        success: false,
-        message: "Credenciais inválidas"
-      });
-    }
-
-    // Gerar token JWT
-    const token = jwt.sign(
-      { id: user.id, email: user.email, nome: user.nome, hospital: user.hospital, tipo_usuario: user.tipo_usuario },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
-    );
 
     res.json({
       success: true,
       message: "Login realizado com sucesso",
       data: {
-        token,
-        user: {
-          id: user.id,
-          email: user.email,
-          nome: user.nome,
-          hospital: user.hospital,
-          tipo_usuario: user.tipo_usuario
-        }
+        token: data.session.access_token,
+        user: data.user
       }
     });
-
   } catch (error) {
     res.status(500).json({ success: false, message: "Erro interno do servidor" });
   }
 });
+
+
 
 
 // Obter perfil do usuário logado
