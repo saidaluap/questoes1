@@ -1066,6 +1066,15 @@ app.post('/api/historico/salvar-resposta', authenticateToken, async (req, res) =
   }
 
   try {
+  
+    console.log('DEBUG HISTÓRICO:', {
+  user_id: userId,
+  questao_id,
+  resposta_usuario,
+  resposta_correta,
+  acertou
+});
+
     // Deletar resposta anterior para a questão do usuário
     const { error: deleteError } = await supabase
       .from('historico_respostas')
@@ -1092,8 +1101,10 @@ app.post('/api/historico/salvar-resposta', authenticateToken, async (req, res) =
       .maybeSingle();
 
     if (insertError) {
-      return res.status(500).json({ error: 'Erro ao salvar resposta', details: insertError });
-    }
+  console.error('Supabase insert error:', insertError);
+  return res.status(500).json({ error: 'Erro ao salvar resposta', details: insertError });
+}
+
 
     res.json({ message: 'Resposta salva com sucesso', id: data.id });
   } catch (err) {
