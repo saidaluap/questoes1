@@ -1121,8 +1121,7 @@ app.get('/api/historico/estatisticas', authenticateToken, async (req, res) => {
   const userId = req.user.id;
 
   try {
-    // Buscar todas as respostas do usuário
-    const { data: respostas, error } = await supabase
+    const { data: respostas = [], error } = await supabase
       .from('historico_respostas')
       .select('acertou')
       .eq('user_id', userId);
@@ -1131,7 +1130,6 @@ app.get('/api/historico/estatisticas', authenticateToken, async (req, res) => {
       return res.status(500).json({ error: 'Erro ao buscar estatísticas', details: error });
     }
 
-    // Calcular estatísticas agregadas manualmente
     const total_respostas = respostas.length;
     const total_acertos = respostas.filter(r => r.acertou === 1).length;
     const total_erros = respostas.filter(r => r.acertou === 0).length;
@@ -1149,9 +1147,10 @@ app.get('/api/historico/estatisticas', authenticateToken, async (req, res) => {
       }
     });
   } catch (err) {
-    res.status(500).json({ error: 'Erro ao buscar estatísticas', details: err });
+    res.status(500).json({ error: 'Erro ao buscar estatísticas', details: err.message });
   }
 });
+
 
 // Iniciar o servidor
 app.listen(PORT, '0.0.0.0', () => {
