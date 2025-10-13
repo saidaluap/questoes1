@@ -1101,8 +1101,16 @@ app.get("/api/historico/estatisticas-filtrado", authenticateToken, async (req, r
 
     // 4. Calcula agregados sobre o filtrado
     const total_respostas = filtrado.length;
-    const total_acertos = filtrado.filter(r => r.acertou === 1).length;
-    const total_erros = filtrado.filter(r => r.acertou === 0).length;
+
+    const total_acertos = filtrado.filter(r =>
+  r.acertou === 1 || r.acertou === true || r.acertou === '1' || r.acertou === 'true'
+).length;
+
+
+    const total_erros = filtrado.filter(r =>
+  r.acertou === 0 || r.acertou === false || r.acertou === '0' || r.acertou === 'false'
+).length;
+
     const taxa_acerto = total_respostas > 0
       ? Math.round((100.0 * total_acertos / total_respostas) * 10) / 10
       : 0.0;
