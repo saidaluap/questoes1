@@ -29,6 +29,15 @@ function Dashboard() {
     areas: 0
   });
 
+  const [statsHistorico, setStatsHistorico] = useState({
+  total_respostas: 0,
+  total_acertos: 0,
+  total_erros: 0,
+  taxa_acerto: 0
+  });
+
+
+
   function semFiltrosNenhum() {
   return !filtros.tipo && !filtros.area && !filtros.subtema && !filtros.ano && !filtros.palavraChave;
 }
@@ -155,6 +164,9 @@ const fetchQuestoes = async () => {
 };
 
 
+  useEffect(() => {
+  fetchEstatisticasFiltradas();
+  }, [filtros, token]);
 
 
 
@@ -431,6 +443,46 @@ const handleResponder = async (questionId) => {
       }
     }));
   };
+
+  const fetchEstatisticasFiltradas = async () => {
+  try {
+    const params = new URLSearchParams();
+    Object.keys(filtros).forEach(key => {
+      if (filtros[key]) params.append(key, filtros[key]);
+    });
+    const response = await fetch(`${API_URL}/api/historico/estatisticas-filtrado?${params.toString()}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (response.ok) {
+      const data = await response.json();
+      setStatsHistorico(data.data);
+    } else {
+      setStatsHistorico({ total_respostas: 0, total_acertos: 0, total_erros: 0, taxa_acerto: 0 });
+    }
+  } catch {
+    setStatsHistorico({ total_respostas: 0, total_acertos: 0, total_erros: 0, taxa_acerto: 0 });
+  }
+};
+
+<div className="stats-grid">
+  <div className="stat-card blue">
+    <div className="stat-number">{statsHistorico.total_respostas}</div>
+    <div className="stat-label">Total de Respostas (histórico)</div>
+  </div>
+  <div className="stat-card green">
+    <div className="stat-number">{statsHistorico.total_acertos}</div>
+    <div className="stat-label">Acertos</div>
+  </div>
+  <div className="stat-card red">
+    <div className="stat-number">{statsHistorico.total_erros}</div>
+    <div className="stat-label">Erros</div>
+  </div>
+  <div className="stat-card purple">
+    <div className="stat-number">{statsHistorico.taxa_acerto}%</div>
+    <div className="stat-label">Taxa de Acerto</div>
+  </div>
+</div>
+
 
   const goToPage = (page) => {
     if (page >= 1 && page <= totalPages) {
