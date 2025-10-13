@@ -2308,55 +2308,73 @@ body {
 
 .historico-item {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.5rem 1rem;
-  border-bottom: 1px solid #ececec;
-  background: var(--color-white);
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding: 20px 24px;
   border-radius: 10px;
-  margin-bottom: 20px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+  margin-bottom: 24px;
+  gap: 24px;
+  background: #fff;
+  border: none;
 }
 
-.historico-item .number-circle {
-  width: 36px;
-  height: 36px;
+.number-circle {
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
-  background-color: #4a55b5;
-  color: white;
-  font-weight: 700;
-  font-size: 1.1rem;
+  background: #4a55b5;
+  color: #fff;
+  font-size: 1.2em;
+  font-weight: bold;
   display: flex;
-  justify-content: center;
   align-items: center;
-  margin-right: 15px;
-  user-select: none;
+  justify-content: center;
+  margin-right: 12px;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(80,80,190,0.09);
 }
 
 .historico-info {
-  flex: 1 1 auto;
-  font-size: .98rem;
-  color: #565664;
+  flex: 1 1 60%;
+  font-size: 1.06em;
+  color: #567;
+  font-weight: 500;
+}
+.historico-info strong {
+  color: #4a55b5;
+  letter-spacing: 1px;
+}
+.question-text {
+  margin-top: 5px;
+  color: #444;
+  font-style: italic;
+  font-size: 0.97em;
 }
 
 .historico-result {
-  text-align: right;
-  min-width: 140px;
+  flex: 1 1 30%;
+  text-align: left;
+  min-width: 170px;
 }
-
-.historico-result .correct {
-  color: #16a34a;
-  font-weight: 700;
+.correct { color: #16a34a; background: #dcfce7; padding: 4px 12px; border-radius: 16px; font-weight: 600;}
+.incorrect { color: #dc2626; background: #fee2e2; padding: 4px 12px; border-radius: 16px; font-weight: 600;}
+.historico-actions { margin-top: 8px; }
+.btn-expand, .btn-delete {
+  padding: 5px 16px;
+  border-radius: 8px;
+  border: none;
+  margin-right: 8px;
+  font-size: .97em;
+  cursor: pointer;
 }
-
-.historico-result .incorrect {
-  color: #dc2626;
-  font-weight: 700;
-}
-
-.historico-actions button {
-  margin-right: 0.5rem;
-}
+.btn-delete { background: #f87171; color: #fff; }
+.btn-expand { background: #e0e7ff; color: #4a55b5; }
+.alternatives { margin-top: 10px; }
+.alternative { margin-bottom: 3px; }
+.correct-answer { color: #16a34a; font-weight: bold; }
+.incorrect-answer { color: #dc2626; }
+.alternative-letter { font-weight: 600; margin-right: 5px;}
 
 
 
