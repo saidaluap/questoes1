@@ -344,90 +344,75 @@ const [filtroAno, setFiltroAno] = useState('');
           </div>
         )}
 
-        {historico.map((resposta, index) => {
-          const isExpanded = expandedQuestions[resposta.id];
-          const questionNumber = (currentPage - 1) * ITEMS_PER_PAGE + index + 1;
-          
-          return (
-            <div key={resposta.id} className="historico-item">
-              <div className="historico-header-item">
-                <div className="historico-info">
-                  <div className="question-number">{questionNumber}</div>
-                  <div className="question-meta">
-                    <span className={`tag tag-${(resposta.tipo || '').toLowerCase()}`}>{resposta.tipo}</span>
-                    <span className="tag tag-area">{resposta.area || ''}</span>
-                    {resposta.subtema && <span className="tag tag-subtema">{resposta.subtema}</span>}
-                    <span className="tag tag-ano">{resposta.ano || ''}</span>
-                    <span className="tag tag-id">ID Questão: {resposta.questao_id}</span>
-                  </div>
-                </div>
-                <div className="historico-result">
-                  <div className={`result-badge ${resposta.acertou ? 'correct' : 'incorrect'}`}>
-                    {resposta.acertou ? '✓ Acertou' : '✗ Errou'}
-                  </div>
-                  <div className="response-info">
-                    <span>Sua resposta: <strong>{resposta.resposta_usuario}</strong></span>
-                    <span>Resposta correta: <strong>{resposta.resposta_correta}</strong></span>
-                  </div>
-                  <div className="historico-date">
-                    {new Date(resposta.data_resposta).toLocaleDateString('pt-BR', {
-                      day: '2-digit',
-                      month: '2-digit',
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
-                  </div>
-                </div>
-              </div>
+{historico.map((resposta, index) => {
+  const isExpanded = expandedQuestions[resposta.id];
+  const questionNumber = (currentPage - 1) * ITEMS_PER_PAGE + index + 1;
 
-              <div className="historico-actions">
-                <button 
-                  onClick={() => toggleQuestionExpansion(resposta.id)}
-                  className="btn btn-expand"
-                >
-                  {isExpanded ? '▲ Ocultar Questão' : '▼ Ver Questão'}
-                </button>
-                <button 
-                  onClick={() => handleDeleteResposta(resposta.id)}
-                  className="btn btn-delete"
-                >
-                  🗑️ Deletar
-                </button>
-              </div>
-
-              {isExpanded && (
-                <div className="question-details">
-                  <div className="question-text">
-                    {resposta.questao}
+  return (
+    <div key={resposta.id} className="historico-item">
+      <div className="number-circle">{questionNumber}</div>
+      <div className="historico-info">
+        <span style={{ fontWeight: 500 }}>
+          ID QUESTÃO: Q{String(resposta.questao_id).padStart(3,'0')} {resposta.tipo} {resposta.ano}
+        </span>
+        <div style={{ fontStyle: 'italic', color: '#888', marginTop: 4 }}>
+          "{resposta.questao}"
+        </div>
+      </div>
+      <div className="historico-result">
+        <div>
+          {resposta.acertou
+            ? <span className="correct">✓ Acertou</span>
+            : <span className="incorrect">✗ Errou</span>
+          }
+        </div>
+        <div>
+          Sua resposta: <strong>{resposta.resposta_usuario}</strong><br />
+          Resposta correta: <strong>{resposta.resposta_correta}</strong><br />
+          <small>{new Date(resposta.data_resposta).toLocaleString('pt-BR')}</small>
+        </div>
+        <div style={{ marginTop: 10 }}>
+          <button
+            onClick={() => toggleQuestionExpansion(resposta.id)}
+            className="btn btn-expand"
+            style={{ marginRight: 8 }}
+          >
+            {isExpanded ? '▲ Ocultar Questão' : '▼ Ver Questão'}
+          </button>
+          <button
+            onClick={() => handleDeleteResposta(resposta.id)}
+            className="btn btn-delete"
+          >
+            🗑️ Deletar
+          </button>
+        </div>
+      </div>
+      {/* Detalhe expandido */}
+      {isExpanded && (
+        <div className="question-details" style={{ gridColumn: '1 / -1', marginTop: 8 }}>
+          <div className="question-text">{resposta.questao}</div>
+          {resposta.alternativas && (
+            <div className="alternatives" style={{ marginTop: 5 }}>
+              {resposta.alternativas.map((alt, altIndex) => {
+                const isUserAnswer = alt.letra === resposta.resposta_usuario;
+                const isCorrectAnswer = alt.letra === resposta.resposta_correta;
+                let className = 'alternative';
+                if (isCorrectAnswer) className += ' correct-answer';
+                if (isUserAnswer && !isCorrectAnswer) className += ' incorrect-answer';
+                return (
+                  <div key={altIndex} className={className}>
+                    <span className="alternative-letter">{alt.letra}:</span> {alt.texto}
                   </div>
-                  
-                  {resposta.alternativas && resposta.alternativas.length > 0 && (
-                    <div className="alternatives">
-                      {resposta.alternativas.map((alt, altIndex) => {
-                        const isUserAnswer = alt.letra === resposta.resposta_usuario;
-                        const isCorrectAnswer = alt.letra === resposta.resposta_correta;
-                        let className = 'alternative';
-                        
-                        if (isCorrectAnswer) {
-                          className += ' correct-answer';
-                        } else if (isUserAnswer) {
-                          className += ' incorrect-answer';
-                        }
-                        
-                        return (
-                          <div key={altIndex} className={className}>
-                            <span className="alternative-letter">{alt.letra}:</span> {alt.texto}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              )}
+                );
+              })}
             </div>
-          );
-        })}
+          )}
+        </div>
+      )}
+    </div>
+  );
+})}
+
 
         {/* Paginação */}
         {totalPages > 1 && (
