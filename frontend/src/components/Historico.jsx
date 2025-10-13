@@ -63,27 +63,20 @@ const [filtroAno, setFiltroAno] = useState('');
   };
 
 
-  const totalRespostasFiltradas = historico.length;
-  const totalAcertosFiltrados = historico.filter(r => r.acertou === 1).length;
-  const totalErrosFiltrados = historico.filter(r => r.acertou === 0).length;
-  const taxaAcertoFiltrada = totalRespostasFiltradas > 0
-    ? Math.round((totalAcertosFiltrados / totalRespostasFiltradas) * 100)
-    : 0;
-
 
   // Buscar estatísticas
   
   console.log("Token usado em fetchStats:", token);
   
   const fetchStats = async () => {
-  try {
+    try {
     const params = new URLSearchParams();
     if (filtroTipo) params.append('tipo', filtroTipo);
     if (filtroArea) params.append('area', filtroArea);
     if (filtroAno) params.append('ano', filtroAno);
     if (searchTerm.trim()) params.append('palavraChave', searchTerm.trim());
 
-    const response = await fetch(`${API_URL}/api/historico/estatisticas?${params.toString()}`, {
+    const response = await fetch(`${API_URL}/api/historico/estatisticas-filtrado?${params.toString()}`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
 
@@ -92,9 +85,10 @@ const [filtroAno, setFiltroAno] = useState('');
       setStats(data.data);
     }
   } catch (error) {
-    console.error('Erro ao buscar estatísticas:', error);
+    console.error('Erro ao buscar estatísticas filtradas:', error);
   }
 };
+
 
   useEffect(() => {
   fetchHistorico();
