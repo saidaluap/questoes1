@@ -700,10 +700,11 @@ app.get('/api/historico/estatisticas', authenticateToken, async (req, res) => {
 
   try {
     // Buscar histórico do usuário logado, incluindo as questões relacionadas
-    let query = supabase
-      .from('historico_respostas')
-      .select('acertou, questoes(questao, subtema, tipo, area, ano)')
-      .eq('user_id', userId);
+  let query = supabase
+    .from('historico_respostas')
+    .select('acertou')
+    .eq('user_id', userId);
+
 
     // Aplica os filtros dinamicamente
     if (tipo) query = query.eq('questoes.tipo', tipo);
