@@ -1843,6 +1843,71 @@ body {
   background-color: rgba(102, 126, 234, 0.1);
 }
 
+/* Container do histórico */
+.historico-container {
+  max-width: 100%;
+}
+
+.historico-header {
+  text-align: center;
+  margin-bottom: var(--spacing-xl);
+}
+
+.historico-header h2 {
+  font-size: 2rem;
+  color: var(--color-text);
+  margin-bottom: var(--spacing-sm);
+}
+
+.historico-header p {
+  color: var(--color-text-light);
+  font-size: 1.1rem;
+}
+
+/* Estatísticas */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+}
+
+.stat-card {
+  background: var(--color-white);
+  padding: var(--spacing-lg);
+  border-radius: var(--border-radius-lg);
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+  border-left: 4px solid;
+}
+
+.stat-card.blue {
+  border-left-color: #3b82f6;
+}
+
+.stat-card.green {
+  border-left-color: #10b981;
+}
+
+.stat-card.red {
+  border-left-color: #ef4444;
+}
+
+.stat-card.purple {
+  border-left-color: #8b5cf6;
+}
+
+.stat-number {
+  font-size: 2rem;
+  font-weight: bold;
+  color: var(--color-text);
+  margin-bottom: var(--spacing-xs);
+}
+
+.stat-label {
+  color: var(--color-text-light);
+  font-size: 0.9rem;
+}
 
 
 
