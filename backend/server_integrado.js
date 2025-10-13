@@ -289,20 +289,22 @@ app.post("/api/auth/login", [
 
 
 // Obter perfil do usuário logado
-app.get("/api/auth/profile", authenticateToken, (req, res) => {
+app.get("/api/auth/profile", authenticateToken, async (req, res) => {
+  const userId = req.user.id;
+  const { data, error } = await supabase
+    .from('dados')
+    .select('id, email, nome, hospital, tipo_usuario')
+    .eq('id', userId)
+    .maybeSingle();
+  if (error || !data) {
+    return res.status(404).json({ success: false, message: "Usuário não encontrado" });
+  }
   res.json({
     success: true,
-    data: {
-      user: {
-        id: req.user.id,
-        email: req.user.email,
-        nome: req.user.nome,
-        hospital: req.user.hospital,
-        tipo_usuario: req.user.tipo_usuario
-      }
-    }
+    data: { user: data }
   });
 });
+
 
 // Atualizar perfil do usuário logado
 app.put("/api/auth/profile", authenticateToken, [
@@ -1013,43 +1015,43 @@ app.get('/api/historico', authenticateToken, async (req, res) => {
     // Buscar respostas com dados da questão
     const { data: respostas, error } = await supabase
       .from('historico_respostas')
-      .select('*, questoes(*)')
+      .select('*')
       .eq('user_id', userId);
 
     if (error) return res.status(500).json({ error: 'Erro ao buscar histórico', details: error });
 
-    // Filtrar últimas respostas por questao_id
-    const ultimasRespostasMap = new Map();
-    for (const r of respostas) {
-      const prev = ultimasRespostasMap.get(r.questao_id);
-      if (!prev || new Date(r.data_resposta) > new Date(prev.data_resposta)) {
-        ultimasRespostasMap.set(r.questao_id, r);
-      }
-    }
-    let ultimasRespostas = Array.from(ultimasRespostasMap.values());
+// Após pegar respostas do Supabase
+const historicoCompleto = await Promise.all(
+  respostas.map(async r => {
+    return new Promise((resolve, reject) => {
+      db.get('SELECT * FROM questoes WHERE id = ?', [r.questao_id], (err, questao) => {
+        if (err) return reject(err);
+        // Retorne um objeto unificando histórico + questão
+        resolve({ ...r, questao });
+      });
+    });
+  })
+);
 
-    // Aplicar filtros
-    if (tipo) {
-      ultimasRespostas = ultimasRespostas.filter(r => r.questoes.tipo === tipo);
-    }
-    if (area) {
-      ultimasRespostas = ultimasRespostas.filter(r => r.questoes.area === area);
-    }
-    if (ano) {
-      ultimasRespostas = ultimasRespostas.filter(r => r.questoes.ano === parseInt(ano));
-    }
+
+    // AGORA, APLIQUE OS FILTROS SOBRE historicoCompleto
+    let resultado = historicoCompleto;
+    if (tipo) resultado = resultado.filter(h => h.questao && h.questao.tipo === tipo);
+    if (area) resultado = resultado.filter(h => h.questao && h.questao.area === area);
+    if (ano) resultado = resultado.filter(h => h.questao && h.questao.ano === parseInt(ano));
     if (palavraChave) {
       const keyword = palavraChave.toLowerCase();
-      ultimasRespostas = ultimasRespostas.filter(r => 
-        (r.questoes.questao && r.questoes.questao.toLowerCase().includes(keyword)) ||
-        (r.questoes.subtema && r.questoes.subtema.toLowerCase().includes(keyword))
+      resultado = resultado.filter(h =>
+        (h.questao && (
+          (h.questao.questao && h.questao.questao.toLowerCase().includes(keyword)) ||
+          (h.questao.subtema && h.questao.subtema.toLowerCase().includes(keyword))
+        ))
       );
     }
-
     // Ordenar por data_resposta decrescente
-    ultimasRespostas.sort((a, b) => new Date(b.data_resposta) - new Date(a.data_resposta));
+    resultado.sort((a, b) => new Date(b.data_resposta) - new Date(a.data_resposta));
 
-    res.json({ data: ultimasRespostas });
+    res.json({ data: resultado });
   } catch (err) {
     res.status(500).json({ error: 'Erro interno do servidor', details: err.message });
   }
