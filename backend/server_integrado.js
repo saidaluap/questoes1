@@ -707,9 +707,10 @@ app.get('/api/historico/estatisticas', authenticateToken, async (req, res) => {
 
 
     // Aplica os filtros dinamicamente
-    if (tipo) query = query.eq('questoes.tipo', tipo);
-    if (area) query = query.eq('questoes.area', area);
-    if (ano) query = query.eq('questoes.ano', parseInt(ano));
+    //if (tipo) query = query.eq('questoes.tipo', tipo);
+   // if (area) query = query.eq('questoes.area', area);
+    //if (ano) query = query.eq('questoes.ano', parseInt(ano));
+    
     if (palavraChave) {
       // Para busca textual, é necessário filtrar localmente
       const { data: respostas, error } = await query;
@@ -1055,6 +1056,69 @@ const historicoCompleto = await Promise.all(
     res.json({ data: resultado });
   } catch (err) {
     res.status(500).json({ error: 'Erro interno do servidor', details: err.message });
+  }
+});
+
+
+// Estatísticas filtradas no histórico (Supabase + SQLite)
+app.get("/api/historico/estatisticas-filtrado", authenticateToken, async (req, res) => {
+  const userId = req.user.id;
+  const { tipo, area, ano, palavraChave } = req.query;
+
+  try {
+    // 1. Busca todo o histórico do usuário
+    const { data: respostas, error } = await supabase
+      .from('historico_respostas')
+      .select('*')
+      .eq('user_id', userId);
+
+    if (error) return res.status(500).json({ error: 'Erro ao buscar histórico', details: error });
+
+    // 2. Para cada resposta, busca a respectiva questão no SQLite
+    const historicoCompleto = await Promise.all(
+      respostas.map(r => new Promise((resolve, reject) => {
+        db.get('SELECT * FROM questoes WHERE id = ?', [r.questao_id], (err, questao) => {
+          if (err) return reject(err);
+          resolve({ ...r, questao });
+        });
+      }))
+    );
+
+    // 3. Aplica os filtros recebidos
+    let filtrado = historicoCompleto;
+    if (tipo) filtrado = filtrado.filter(h => h.questao && h.questao.tipo === tipo);
+    if (area) filtrado = filtrado.filter(h => h.questao && h.questao.area === area);
+    if (ano) filtrado = filtrado.filter(h => h.questao && h.questao.ano === parseInt(ano));
+    if (palavraChave) {
+      const keyword = palavraChave.toLowerCase();
+      filtrado = filtrado.filter(h =>
+        h.questao && (
+          (h.questao.questao && h.questao.questao.toLowerCase().includes(keyword)) ||
+          (h.questao.subtema && h.questao.subtema.toLowerCase().includes(keyword))
+        )
+      );
+    }
+
+    // 4. Calcula agregados sobre o filtrado
+    const total_respostas = filtrado.length;
+    const total_acertos = filtrado.filter(r => r.acertou === 1).length;
+    const total_erros = filtrado.filter(r => r.acertou === 0).length;
+    const taxa_acerto = total_respostas > 0
+      ? Math.round((100.0 * total_acertos / total_respostas) * 10) / 10
+      : 0.0;
+
+    res.json({
+      message: "success",
+      data: {
+        total_respostas,
+        total_acertos,
+        total_erros,
+        taxa_acerto
+      }
+    });
+
+  } catch (err) {
+    res.status(500).json({ error: "Erro ao calcular estatísticas filtradas", details: err.message });
   }
 });
 
