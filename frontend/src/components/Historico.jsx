@@ -128,7 +128,7 @@ if (response.ok) {
   setTimeout(() => {
     fetchHistorico();
     fetchStats();
-  }, 200);
+  }, 300);
   alert('Resposta deletada com sucesso!');
 } else {
   const errorData = await response.json();
