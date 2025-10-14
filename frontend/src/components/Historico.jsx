@@ -386,7 +386,7 @@ if (response.ok) {
           onClick={() => handleDeleteResposta(resposta.id)} 
           className="btn btn-delete" 
           disabled={loading}>
-            🗑️ Deletar ({resposta.id})
+            🗑️ Deletar
           </button>
 
         </div>
