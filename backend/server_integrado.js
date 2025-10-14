@@ -1023,16 +1023,17 @@ app.get('/api/historico', authenticateToken, async (req, res) => {
 
 // Após pegar respostas do Supabase
 const historicoCompleto = await Promise.all(
-  respostas.map(async r => {
-    return new Promise((resolve, reject) => {
-      db.get('SELECT * FROM questoes WHERE id = ?', [r.questao_id], (err, questao) => {
-        if (err) return reject(err);
-        // Retorne um objeto unificando histórico + questão
-        resolve({ ...r, questao });
-      });
-    });
-  })
+  respostas.map(async r => {
+    return new Promise((resolve, reject) => {
+      db.get('SELECT * FROM questoes WHERE id = ?', [r.questao_id], (err, questao) => {
+        if (err) return reject(err);
+        // Garante que o campo "id" do histórico NÃO seja sobrescrito pelo id da questão!
+        resolve({ ...r, questao, questao_id_original: questao.id });
+      });
+    });
+  })
 );
+
 
 
     // AGORA, APLIQUE OS FILTROS SOBRE historicoCompleto
