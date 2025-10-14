@@ -360,11 +360,6 @@ if (response.ok) {
         <strong>
           ID QUESTÃO: {String(resposta?.questao_id ?? '---')} {String(resposta?.tipo ?? '')} {String(resposta?.ano ?? '')}
         </strong>
-{resposta?.questao && (
-  <div className="question-text">
-    {resposta.questao}
-  </div>
-)}
 
       </div>
       <div className="historico-result">
