@@ -381,9 +381,6 @@ const [filtroAno, setFiltroAno] = useState('');
           </small>
         </div>
         <div className="historico-actions">
-          <button onClick={() => toggleQuestionExpansion(respostaId)} className="btn btn-expand">
-            {isExpanded ? '▲ Ocultar Questão' : '▼ Ver Questão'}
-          </button>
           <button onClick={() => handleDeleteResposta(respostaId)} className="btn btn-delete">
             🗑️ Deletar
           </button>
