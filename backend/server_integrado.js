@@ -954,23 +954,24 @@ app.delete("/api/historico/deletar-resposta/:id", authenticateToken, async (req,
 console.log("Tentando deletar resposta do histórico. id do histórico:", id, "| id do usuário:", userId);
 
   try {
-    const { data, error } = await supabase
-      .from('historico_respostas')
-      .delete()
-      .eq('id', id)
-      .eq('user_id', userId);
+const { data, error } = await supabase
+  .from('historico_respostas')
+  .delete()
+  .eq('id', id)
+  .eq('user_id', userId)
+  .select(); // <- ESSENCIAL: retorna o(s) dado(s) deletado(s)
+
 
     console.log("Resultado do delete:", data);
 
-    if (error) {
-      return res.status(400).json({ error: error.message || error });
-    }
+if (error) {
+  return res.status(400).json({ error: error.message || error });
+}
+if (!data || data.length === 0) {
+  return res.status(404).json({ error: "Resposta não encontrada para deletar." });
+}
+res.json({ message: "Resposta deletada com sucesso!" });
 
-    if (!data || data.length === 0) {
-      return res.status(404).json({ error: "Resposta não encontrada para deletar." });
-    }
-
-    res.json({ message: "Resposta deletada com sucesso!" });
   } catch (err) {
     res.status(500).json({ error: 'Erro interno do servidor', details: err.message });
   }
