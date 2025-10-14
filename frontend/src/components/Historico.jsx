@@ -281,8 +281,6 @@ if (response.ok) {
       style={{ flex: "1 1 140px", minWidth: 120 }}
     >
                   <option value="">Selecione...</option>
-                  <option value="Ortopedia">Ortopedia</option>
-                  <option value="Trauma">Traumatologia</option>
                   <option value="Ortopedia Pediátrica">Ortopedia Pediátrica</option>
                   <option value="Coluna">Coluna</option>
                   <option value="Mão">Mão</option>
