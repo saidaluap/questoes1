@@ -1807,82 +1807,145 @@ body {
 }
 
 
-/* ==========================================================================
-   HISTÓRICO DE RESPOSTAS
-   ========================================================================== */
-
 .historico-item {
   display: flex;
-  align-items: flex-start;
-  justify-content: flex-start;
-  padding: 20px 24px;
-  border-radius: 10px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.06);
-  margin-bottom: 24px;
-  gap: 24px;
+  flex-direction: column;
   background: #fff;
-  border: none;
+  border-radius: 12px;
+  box-shadow: 0 1px 6px rgba(80,80,190,0.08);
+  margin-bottom: 18px;
+  padding: 18px 20px 15px 20px;
+  gap: 0;
+  border: 1px solid #ede9fe;
 }
 
 .number-circle {
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  background: #6c7bd8; /* lilás do círculo */
+  background: #6c7bd8;
   color: #fff;
-  font-size: 1.25em;
+  font-size: 1.1em;
   font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 12px;
-  flex-shrink: 0;
-  box-shadow: 0 2px 6px rgba(80,80,190,0.09);
+  margin-bottom: 2px;
+  margin-right: 0; /* não usa coluna extra */
+  box-shadow: none;
 }
 
-.historico-info {
-  flex: 1 1 60%;
-  font-size: 1.12em;
-  color: #515a6a;
-  font-weight: 500;
-}
 .historico-info strong {
-  color: #6c7bd8; /* título lilás igual ao círculo */
-  letter-spacing: 1px;
+  color: #6c7bd8;
+  font-size: 1.01em;
+  margin-bottom: 2px;
+  display: block;
+  letter-spacing: 0.5px;
 }
+.historico-info {
+  font-size: 1em;
+  color: #444;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
 .question-text {
-  margin-top: 5px;
+  margin: 1px 0 9px 0;
   color: #222;
   font-style: italic;
   font-size: 1em;
+  min-height: 25px;
 }
 
 .historico-result {
-  flex: 1 1 30%;
-  text-align: left;
-  min-width: 170px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  margin-top: 0px;
 }
-.correct { color: #16a34a; background: #dcfce7; padding: 6px 18px; border-radius: 16px; font-weight: 600; font-size: 1em; }
-.incorrect { color: #dc2626; background: #fee2e2; padding: 6px 18px; border-radius: 16px; font-weight: 600; font-size: 1em; }
-.historico-actions { margin-top: 10px; }
-.btn-expand, .btn-delete {
-  padding: 8px 20px;
-  border-radius: 16px;
-  border: none;
-  margin-right: 8px;
+
+.status-success {
+  color: #16a34a;
+  background: #dcfce7;
+  font-weight: bold;
+  border-radius: 8px;
+  padding: 2px 9px;
+  font-size: 0.99em;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.status-success::before {
+  content: "✓";
+  margin-right: 4px;
   font-size: 1em;
+  font-weight: bold;
+}
+
+.status-error {
+  color: #dc2626;
+  background: #fee2e2;
+  font-weight: bold;
+  border-radius: 8px;
+  padding: 2px 9px;
+  font-size: 0.99em;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.status-error::before {
+  content: "✗";
+  margin-right: 4px;
+  font-size: 1em;
+  font-weight: bold;
+}
+
+.historico-detail-row {
+  display: flex;
+  gap: 16px;
+  font-size: 0.96em;
+  margin-bottom: 2px;
+}
+
+.historico-detail-label {
+  color: #8889a4;
+}
+
+.historico-actions {
+  margin-top: 3px;
+  display: flex;
+  gap: 6px;
+}
+
+.btn-questao, .btn-delete {
+  padding: 4px 13px;
+  border-radius: 7px;
+  border: none;
+  font-size: 0.98em;
   font-weight: 500;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.18s;
 }
-.btn-delete { background: #fee2e2; color: #be4545; border: 1px solid #f87171;}
-.btn-expand { background: #e0e7ff; color: #4855a1; }
-.btn-delete:hover { background: #f87171; color: #fff;}
-.alternatives { margin-top: 16px; }
-.alternative { margin-bottom: 6px; }
-.correct-answer { color: #16a34a; font-weight: bold; }
-.incorrect-answer { color: #dc2626; }
-.alternative-letter { font-weight: 600; margin-right: 7px;}
 
+.btn-questao {
+  background: #e0e7ff;
+  color: #4855a1;
+  border: 1px solid #cad6fa;
+}
 
+.btn-questao:hover {
+  background: #b4c6fc;
+  color: #222;
+}
 
+.btn-delete {
+  background: #fee2e2;
+  color: #be4545;
+  border: 1px solid #fbcaca;
+}
+.btn-delete:hover {
+  background: #f87171;
+  color: #fff;
+}
