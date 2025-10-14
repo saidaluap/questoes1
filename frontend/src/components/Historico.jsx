@@ -129,23 +129,15 @@ const [filtroAno, setFiltroAno] = useState('');
       });
 
 if (response.ok) {
-  // Remove imediatamente o item localmente (UX mais rápida)
-setLoading(true); // <- Impede renderização enquanto recarrega
-const res = await fetch(/* ... */);
-if (res.ok) {
-  await fetchHistorico(); // <-- Carrega SÓ do backend (confia só no backend!)
-  fetchStats();
-  alert('Resposta deletada com sucesso!');
-}
-setLoading(false);
-
-
-  alert('Resposta deletada com sucesso!');
+  setLoading(true);
+  await fetchHistorico(); // Sincroniza do backend após excluir
+  fetchStats();
+  alert('Resposta deletada com sucesso!');
+  setLoading(false);
 } else {
-  const errorData = await response.json();
-  alert(errorData.message || 'Erro ao deletar resposta');
+  const errorData = await response.json();
+  alert(errorData.message || 'Erro ao deletar resposta');
 }
-
 
 
     } catch (error) {
