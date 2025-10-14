@@ -214,9 +214,10 @@ const [filtroAno, setFiltroAno] = useState('');
 
   return (
     <div className="historico-container">
-      <div className="historico-header">
-        <h2>📚 Histórico de Respostas</h2>
-      </div>
+<div className="historico-header" style={{ marginBottom: '22px' }}>
+  <h2>📚 Histórico de Respostas</h2>
+</div>
+
 
 {/* Estatísticas */}
 <div className="stats-grid">
@@ -246,7 +247,7 @@ const [filtroAno, setFiltroAno] = useState('');
 
 
       {/* Barra de pesquisa */}
-<div className="search-container">
+<div className="search-container" style={{ marginBottom: '20px' }}>
   <div className="search-input-group" style={{
     display: "flex",
     flexWrap: "wrap",
