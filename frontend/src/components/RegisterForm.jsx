@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Mail, Lock, User, Building } from 'lucide-react';
 import { useAuth } from './AuthContext';
+import { useNavigate } from "react-router-dom";
 
 const RegisterForm = ({ onSwitchToLogin }) => {
   const [formData, setFormData] = useState({
@@ -46,33 +47,39 @@ const RegisterForm = ({ onSwitchToLogin }) => {
     setErrors([]);
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setErrors([]);
+const navigate = useNavigate();
 
-    // Validação local
-    if (formData.password !== formData.confirmPassword) {
-      setErrors([{ field: 'confirmPassword', message: 'As senhas não coincidem' }]);
-      setLoading(false);
-      return;
-    }
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setLoading(true);
+  setErrors([]);
 
-    if (formData.password.length < 6) {
-      setErrors([{ field: 'password', message: 'A senha deve ter pelo menos 6 caracteres' }]);
-      setLoading(false);
-      return;
-    }
-
-    const { confirmPassword, ...userData } = formData;
-    const result = await register(userData);
-
-    if (!result.success) {
-      setErrors(result.errors || [{ message: result.message }]);
-    }
-
+  // Validação local
+  if (formData.password !== formData.confirmPassword) {
+    setErrors([{ field: 'confirmPassword', message: 'As senhas não coincidem' }]);
     setLoading(false);
-  };
+    return;
+  }
+
+  if (formData.password.length < 6) {
+    setErrors([{ field: 'password', message: 'A senha deve ter pelo menos 6 caracteres' }]);
+    setLoading(false);
+    return;
+  }
+
+  const { confirmPassword, ...userData } = formData;
+  const result = await register(userData);
+
+  if (!result.success) {
+    setErrors(result.errors || [{ message: result.message }]);
+    setLoading(false);
+    return; // Pare aqui se erro
+  }
+
+  // Redirecione para a dashboard somente após sucesso!
+  navigate("/dashboard");
+  setLoading(false);
+};
 
   const getFieldError = (fieldName) => {
     return errors.find(error => error.field === fieldName)?.message;
