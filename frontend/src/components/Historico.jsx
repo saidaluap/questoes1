@@ -111,6 +111,7 @@ const [filtroAno, setFiltroAno] = useState('');
   };
 
   const handleDeleteResposta = async (id) => {
+    console.log('ID enviado para deletar:', id);
     if (!window.confirm('Tem certeza que deseja deletar esta resposta? Esta ação não pode ser desfeita.')) {
       return;
     }
