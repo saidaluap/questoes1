@@ -349,7 +349,7 @@ const [filtroAno, setFiltroAno] = useState('');
   const isExpanded = expandedQuestions[resposta.id];
   const questionNumber = (currentPage - 1) * ITEMS_PER_PAGE + index + 1;
   return (
-    <div key={resposta?.id ?? index} className="historico-item">
+<div key={String(resposta?.id ?? index)} className="historico-item">
      <div className="number-circle">{questionNumber}</div>
       <div className="historico-info">
       <strong>ID QUESTÃO: {resposta?.questao_id ?? '---'} {resposta?.tipo ?? ''} {resposta?.ano ?? ''}</strong>
