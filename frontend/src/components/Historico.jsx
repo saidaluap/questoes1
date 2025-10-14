@@ -347,93 +347,74 @@ const [filtroAno, setFiltroAno] = useState('');
         )}
 
 {Array.isArray(historico) && historico.map((resposta, index) => {
-  const respostaId = resposta.id ?? String(index);
+  // Protege id para key e expande só se id for string/number
+  const respostaId = typeof resposta?.id === 'string' || typeof resposta?.id === 'number'
+      ? resposta.id
+      : String(index);
   const isExpanded = expandedQuestions[respostaId];
   const questionNumber = (currentPage - 1) * ITEMS_PER_PAGE + index + 1;
-
+  // Protege todo texto
   return (
-    <div key={respostaId} className="historico-item" style={{ display: 'grid', gridTemplateColumns: '64px 2fr 1fr 1fr 1fr', alignItems: 'center', marginBottom: 18, boxShadow: '0 1px 6px #ede9fe', borderRadius: 12, background: '#fff', padding: '18px 15px' }}>
-      
-      {/* Número */}
-      <div style={{ justifySelf: 'center' }}>
-        <div className="number-circle" style={{ width: 40, height: 40, fontSize: '1.1em' }}>
-          {questionNumber}
+    <div key={respostaId} className="historico-item">
+      <div className="number-circle">{questionNumber}</div>
+      <div className="historico-info">
+        <strong>
+          ID QUESTÃO: {String(resposta?.questao_id ?? '---')} {String(resposta?.tipo ?? '')} {String(resposta?.ano ?? '')}
+        </strong>
+        <div className="question-text">
+          "{typeof resposta?.questao === 'string' ? resposta.questao : ''}"
         </div>
       </div>
-
-      {/* Questão */}
-      <div style={{ fontWeight: 500 }}>
-        <div style={{ color: '#6c7bd8', fontWeight: 600, fontSize: '1.04em' }}>
-          ID QUESTÃO: {String(resposta.questao_id)} {String(resposta.tipo)} {String(resposta.ano)}
-        </div>
-        <div style={{ fontStyle: 'italic', color: '#222', fontSize: '1em', marginTop: 3 }}>
-          "{typeof resposta.questao === 'string' ? resposta.questao : ''}"
-        </div>
-      </div>
-
-      {/* Resposta Usuário */}
-      <div style={{ fontSize: '1em' }}>
+      <div className="historico-result">
         <div>
-          <span style={{ color: '#222' }}>Sua resposta: </span>
-          <strong>{String(resposta.resposta_usuario ?? '')}</strong>
+          {resposta.acertou 
+            ? <span className="correct">✓ Acertou</span>
+            : <span className="incorrect">✗ Errou</span>}
         </div>
         <div>
-          <span style={{ color: '#888' }}>Correta: </span>
-          <strong>{String(resposta.resposta_correta ?? '')}</strong>
+          Sua resposta: <strong>{String(resposta.resposta_usuario ?? '')}</strong><br />
+          Resposta correta: <strong>{String(resposta.resposta_correta ?? '')}</strong>
         </div>
-      </div>
-
-      {/* Status & Data */}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 6 }}>
-        <span className={resposta.acertou ? "status-success" : "status-error"} style={{ padding: '2px 14px', borderRadius: 12 }}>
-          {resposta.acertou ? "✓ Acertou" : "✗ Errou"}
-        </span>
-        <span style={{ fontSize: '0.85em', color: '#777' }}>
-          {resposta.data_resposta ? new Date(resposta.data_resposta).toLocaleString('pt-BR') : ''}
-        </span>
-      </div>
-
-      {/* Botões */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <button onClick={() => toggleQuestionExpansion(respostaId)} className="btn btn-expand" style={{ marginBottom: 4 }}>
-          {isExpanded ? '▲ Ocultar' : '▼ Ver Questão'}
-        </button>
-        <button onClick={() => handleDeleteResposta(respostaId)} className="btn btn-delete">
-          🗑️ Deletar
-        </button>
-      </div>
-
-      {/* Detalhes expandido */}
-      {isExpanded && (
-        <div
-          className="question-details"
-          style={{ gridColumn: '1 / -1', marginTop: 12, background: '#f8fafc', borderRadius: 8, padding: 10 }}
-        >
-          <div className="question-text">
-            {typeof resposta.questao === 'string' ? resposta.questao : ''}
-          </div>
-          {Array.isArray(resposta.alternativas) && (
-            <div className="alternatives">
-              {resposta.alternativas.map((alt, altIndex) => {
-                const isUserAnswer = alt.letra === resposta.resposta_usuario;
-                const isCorrectAnswer = alt.letra === resposta.resposta_correta;
-                let className = 'alternative';
-                if (isCorrectAnswer) className += ' correct-answer';
-                if (isUserAnswer && !isCorrectAnswer) className += ' incorrect-answer';
-                return (
-                  <div key={String(altIndex)} className={className} style={{ marginBottom: 6 }}>
-                    <span className="alternative-letter">{String(alt.letra)}:</span> {String(alt.texto)}
-                  </div>
-                );
-              })}
+        <div>
+          <small>
+            {resposta.data_resposta ? new Date(resposta.data_resposta).toLocaleString('pt-BR') : ''}
+          </small>
+        </div>
+        <div className="historico-actions">
+          <button onClick={() => toggleQuestionExpansion(respostaId)} className="btn btn-expand">
+            {isExpanded ? '▲ Ocultar Questão' : '▼ Ver Questão'}
+          </button>
+          <button onClick={() => handleDeleteResposta(respostaId)} className="btn btn-delete">
+            🗑️ Deletar
+          </button>
+        </div>
+        {isExpanded && (
+          <div className="question-details" style={{ marginTop: 8 }}>
+            <div className="question-text">
+              {typeof resposta?.questao === 'string' ? resposta.questao : ''}
             </div>
-          )}
-        </div>
-      )}
+            {Array.isArray(resposta.alternativas) && (
+              <div className="alternatives">
+                {resposta.alternativas.map((alt, altIndex) => {
+                  const isUserAnswer = alt.letra === resposta.resposta_usuario;
+                  const isCorrectAnswer = alt.letra === resposta.resposta_correta;
+                  let className = 'alternative';
+                  if (isCorrectAnswer) className += ' correct-answer';
+                  if (isUserAnswer && !isCorrectAnswer) className += ' incorrect-answer';
+                  return (
+                    <div key={String(altIndex)} className={className}>
+                      <span className="alternative-letter">{String(alt.letra)}:</span> {String(alt.texto)}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 })}
-
 
 
 
