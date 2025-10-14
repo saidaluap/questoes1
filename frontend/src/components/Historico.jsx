@@ -51,6 +51,7 @@ const [filtroAno, setFiltroAno] = useState('');
       if (response.ok) {
         const data = await response.json();
         setHistorico(data.data);
+        console.log('Dados recebidos:', data.data);
         //setTotalPages(data.pagination.totalPages);
         setTotalPages(data.pagination ? data.pagination.totalPages : 1);
       } else {
@@ -345,52 +346,65 @@ const [filtroAno, setFiltroAno] = useState('');
           </div>
         )}
 
-{historico.map((resposta, index) => {
-  const isExpanded = expandedQuestions[resposta.id];
+{Array.isArray(historico) && historico.map((resposta, index) => {
+  // Protege id para key e expande só se id for string/number
+  const respostaId = typeof resposta?.id === 'string' || typeof resposta?.id === 'number'
+      ? resposta.id
+      : String(index);
+  const isExpanded = expandedQuestions[respostaId];
   const questionNumber = (currentPage - 1) * ITEMS_PER_PAGE + index + 1;
+  // Protege todo texto
   return (
-<div key={String(resposta?.id ?? index)} className="historico-item">
-     <div className="number-circle">{questionNumber}</div>
+    <div key={respostaId} className="historico-item">
+      <div className="number-circle">{questionNumber}</div>
       <div className="historico-info">
-      <strong>ID QUESTÃO: {resposta?.questao_id ?? '---'} {resposta?.tipo ?? ''} {resposta?.ano ?? ''}</strong>
-      <div className="question-text">"{resposta?.questao ?? ''}"</div>
-    </div>
+        <strong>
+          ID QUESTÃO: {String(resposta?.questao_id ?? '---')} {String(resposta?.tipo ?? '')} {String(resposta?.ano ?? '')}
+        </strong>
+        <div className="question-text">
+          "{typeof resposta?.questao === 'string' ? resposta.questao : ''}"
+        </div>
+      </div>
       <div className="historico-result">
         <div>
           {resposta.acertou 
-            ? <span className="correct">✓ Acertou</span> 
+            ? <span className="correct">✓ Acertou</span>
             : <span className="incorrect">✗ Errou</span>}
         </div>
         <div>
-          Sua resposta: <strong>{resposta.resposta_usuario}</strong><br />
-          Resposta correta: <strong>{resposta.resposta_correta}</strong>
+          Sua resposta: <strong>{String(resposta.resposta_usuario ?? '')}</strong><br />
+          Resposta correta: <strong>{String(resposta.resposta_correta ?? '')}</strong>
         </div>
         <div>
-          <small>{new Date(resposta.data_resposta).toLocaleString('pt-BR')}</small>
+          <small>
+            {resposta.data_resposta ? new Date(resposta.data_resposta).toLocaleString('pt-BR') : ''}
+          </small>
         </div>
         <div className="historico-actions">
-          <button onClick={() => toggleQuestionExpansion(resposta.id)} className="btn btn-expand">
+          <button onClick={() => toggleQuestionExpansion(respostaId)} className="btn btn-expand">
             {isExpanded ? '▲ Ocultar Questão' : '▼ Ver Questão'}
           </button>
-          <button onClick={() => handleDeleteResposta(resposta.id)} className="btn btn-delete">
+          <button onClick={() => handleDeleteResposta(respostaId)} className="btn btn-delete">
             🗑️ Deletar
           </button>
         </div>
-  {isExpanded && (
-  <div className="question-details" style={{ marginTop: 8 }}>
-    <div className="question-text">{resposta.questao}</div>
-    {Array.isArray(resposta.alternativas) && (
-      <div className="alternatives">
-        {resposta.alternativas.map((alt, altIndex) => {
-          const isUserAnswer = alt.letra === resposta.resposta_usuario;
-          const isCorrectAnswer = alt.letra === resposta.resposta_correta;
-          let className = 'alternative';
-          if (isCorrectAnswer) className += ' correct-answer';
-          if (isUserAnswer && !isCorrectAnswer) className += ' incorrect-answer';
-          return (
-            <div key={altIndex} className={className}>
-              <span className="alternative-letter">{alt.letra}:</span> {alt.texto}
+        {isExpanded && (
+          <div className="question-details" style={{ marginTop: 8 }}>
+            <div className="question-text">
+              {typeof resposta?.questao === 'string' ? resposta.questao : ''}
             </div>
+            {Array.isArray(resposta.alternativas) && (
+              <div className="alternatives">
+                {resposta.alternativas.map((alt, altIndex) => {
+                  const isUserAnswer = alt.letra === resposta.resposta_usuario;
+                  const isCorrectAnswer = alt.letra === resposta.resposta_correta;
+                  let className = 'alternative';
+                  if (isCorrectAnswer) className += ' correct-answer';
+                  if (isUserAnswer && !isCorrectAnswer) className += ' incorrect-answer';
+                  return (
+                    <div key={String(altIndex)} className={className}>
+                      <span className="alternative-letter">{String(alt.letra)}:</span> {String(alt.texto)}
+                    </div>
                   );
                 })}
               </div>
@@ -401,6 +415,7 @@ const [filtroAno, setFiltroAno] = useState('');
     </div>
   );
 })}
+
 
 
         {/* Paginação */}
