@@ -347,53 +347,76 @@ if (response.ok) {
         )}
 
 {Array.isArray(historico) && historico.map((resposta, index) => {
-  const respostaId = typeof resposta?.id === 'string' || typeof resposta?.id === 'number' ? resposta.id : String(index);
-  const questionNumber = (currentPage - 1) * ITEMS_PER_PAGE + index + 1;
-  return (
-    <div key={respostaId} className="question-card">
-      <div className="question-header">
-        <div className="question-number">{questionNumber}</div>
-        <div className="question-id">{String(resposta?.questao_id).padStart(3, '0')}</div>
-        <div className="question-tags">
-          {resposta.tipo && <span className="tag tag-taro">{resposta.tipo}</span>}
-          {resposta.area && <span className="tag tag-area">{resposta.area}</span>}
-          {resposta.subtema && <span className="tag tag-subtema">{resposta.subtema}</span>}
-        </div>
-      </div>
-      <div className="question-meta">
-        {resposta.subtema && <span>Subtema: {resposta.subtema}</span>}
-        <span>Ano: {resposta.ano}</span>
-      </div>
-      <div className="question-text">
-        {typeof resposta?.questao === "string" ? resposta.questao : ""}
-      </div>
-      <div className="historico-result">
-        <span className={resposta.acertou ? "correct" : "incorrect"}>
-          {resposta.acertou ? "✔ Acertou" : "✗ Errou"}
-        </span>
-        <span>
-          Sua resposta: <strong>{resposta.resposta_usuario ?? ''}</strong>
-        </span>
-        <span>
-          Resposta correta: <strong>{resposta.resposta_correta ?? ''}</strong>
-        </span>
-        <span>
-          {resposta.data_resposta ? new Date(resposta.data_resposta).toLocaleString('pt-BR') : ''}
-        </span>
-      </div>
-      <div className="historico-actions">
-        <button
-          onClick={() => handleDeleteResposta(resposta.id)}
-          className="btn btn-delete"
-          disabled={loading}
-        >
-          🗑️ Deletar
-        </button>
-      </div>
-    </div>
-  );
-})}
+    console.log('Resposta recebida:', resposta); // Adicione esta linha
+  // Protege id para key e expande só se id for string/number
+  const respostaId = typeof resposta?.id === 'string' || typeof resposta?.id === 'number'
+      ? resposta.id
+      : String(index);
+  const isExpanded = expandedQuestions[respostaId];
+  const questionNumber = (currentPage - 1) * ITEMS_PER_PAGE + index + 1;
+  // Protege todo texto
+  return (
+    <div key={respostaId} className="historico-item">
+      <div className="number-circle">{questionNumber}</div>
+      <div className="historico-info">
+        <strong>
+          ID QUESTÃO: {String(resposta?.questao_id ?? '---')} {String(resposta?.tipo ?? '')} {String(resposta?.ano ?? '')}
+        </strong>
+        <div className="question-text">
+          "{typeof resposta?.questao === 'string' ? resposta.questao : ''}"
+        </div>
+      </div>
+      <div className="historico-result">
+        <div>
+          {resposta.acertou 
+            ? <span className="correct">✓ Acertou</span>
+            : <span className="incorrect">✗ Errou</span>}
+        </div>
+        <div>
+          Sua resposta: <strong>{String(resposta.resposta_usuario ?? '')}</strong><br />
+          Resposta correta: <strong>{String(resposta.resposta_correta ?? '')}</strong>
+        </div>
+        <div>
+          <small>
+            {resposta.data_resposta ? new Date(resposta.data_resposta).toLocaleString('pt-BR') : ''}
+          </small>
+        </div>
+        <div className="historico-actions">
+          <button 
+          onClick={() => handleDeleteResposta(resposta.id)} 
+          className="btn btn-delete" 
+          disabled={loading}>
+            🗑️ Deletar
+          </button>
 
+        </div>
+        {isExpanded && (
+          <div className="question-details" style={{ marginTop: 8 }}>
+            <div className="question-text">
+              {typeof resposta?.questao === 'string' ? resposta.questao : ''}
+            </div>
+            {Array.isArray(resposta.alternativas) && (
+              <div className="alternatives">
+                {resposta.alternativas.map((alt, altIndex) => {
+                  const isUserAnswer = alt.letra === resposta.resposta_usuario;
+                  const isCorrectAnswer = alt.letra === resposta.resposta_correta;
+                  let className = 'alternative';
+                  if (isCorrectAnswer) className += ' correct-answer';
+                  if (isUserAnswer && !isCorrectAnswer) className += ' incorrect-answer';
+                  return (
+                    <div key={String(altIndex)} className={className}>
+                      <span className="alternative-letter">{String(alt.letra)}:</span> {String(alt.texto)}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+})}
 
 
 
