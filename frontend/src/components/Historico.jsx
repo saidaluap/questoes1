@@ -125,15 +125,21 @@ const [filtroAno, setFiltroAno] = useState('');
       });
 
 if (response.ok) {
+  // Remove imediatamente o item localmente (UX mais rápida)
+  setHistorico(historico => historico.filter(h => h.id !== id));
+
+  // Garante sincronismo real do backend após um pequeno delay (por delays do Supabase)
   setTimeout(() => {
     fetchHistorico();
     fetchStats();
-  }, 300);
+  }, 1000);
+
   alert('Resposta deletada com sucesso!');
 } else {
-  const errorData = await response.json();
-  alert(errorData.message || 'Erro ao deletar resposta');
+  const errorData = await response.json();
+  alert(errorData.message || 'Erro ao deletar resposta');
 }
+
 
 
     } catch (error) {
