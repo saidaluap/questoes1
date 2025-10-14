@@ -164,24 +164,25 @@ const fetchQuestoes = async () => {
 };
 
 
-  useEffect(() => {
+useEffect(() => {
+  if (!token) return; // Só executa se o token existir
   fetchEstatisticasFiltradas();
-  }, [filtros, token]);
+}, [filtros, token]);
 
-
-
-  useEffect(() => {
+useEffect(() => {
+  if (!token) return; // Só executa se o token existir
   fetchTotalQuestoes();
   fetchQuestoes();
   if (semFiltrosNenhum()) {
-  // NÃO coloque setStats para total aqui!
-} else {
-  // Aqui sim: quando houver filtro, pode atualizar o total filtrado normalmente.
-  // const totalItems = ...
-  // setStats(prev => ({ ...prev, total: totalItems }));
-}
+    // NÃO coloque setStats para total aqui!
+  } else {
+    // Aqui sim: quando houver filtro, pode atualizar o total filtrado normalmente.
+    // const totalItems = ...
+    // setStats(prev => ({ ...prev, total: totalItems }));
+  }
   //fetchHistorico(); // Adicione esta linha aqui
 }, [token, currentPage, filtros]);
+
 
 
   const handleFiltroChange = (campo, valor) => {
