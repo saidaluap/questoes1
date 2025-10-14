@@ -1064,7 +1064,7 @@ resolve({
     }
     // Ordenar por data_resposta decrescente
     resultado.sort((a, b) => new Date(b.data_resposta) - new Date(a.data_resposta));
-    console.log('Histórico enviado ao frontend:', JSON.stringify(resultado, null, 2));
+    console.log("IDs do histórico retornados ao frontend:", resultado.map(h => h.id));
     res.json({ data: resultado });
   } catch (err) {
     res.status(500).json({ error: 'Erro interno do servidor', details: err.message });
