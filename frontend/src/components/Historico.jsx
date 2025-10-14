@@ -348,6 +348,7 @@ const [filtroAno, setFiltroAno] = useState('');
         )}
 
 {Array.isArray(historico) && historico.map((resposta, index) => {
+    console.log('Resposta recebida:', resposta); // Adicione esta linha
   // Protege id para key e expande só se id for string/number
   const respostaId = typeof resposta?.id === 'string' || typeof resposta?.id === 'number'
       ? resposta.id
