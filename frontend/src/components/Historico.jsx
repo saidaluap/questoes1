@@ -216,7 +216,6 @@ const [filtroAno, setFiltroAno] = useState('');
     <div className="historico-container">
       <div className="historico-header">
         <h2>📚 Histórico de Respostas</h2>
-        <p>Visualize e gerencie suas respostas anteriores</p>
       </div>
 
 {/* Estatísticas */}
