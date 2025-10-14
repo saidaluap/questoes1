@@ -125,23 +125,14 @@ const [filtroAno, setFiltroAno] = useState('');
       });
 
 if (response.ok) {
-  // Atualize a lista de respostas na tela imediatamente
-  setHistorico(old => old.filter(r => r.id !== id));
-  fetchStats();
-
-  // (Opcional) Também remova do localStorage, se necessário
-  const historicoLocal = JSON.parse(localStorage.getItem('historico_respostas') || '[]');
-  const respostaParaDeletar = historico.find(r => r.id === id);
-  if (respostaParaDeletar) {
-    const historicoFiltrado = historicoLocal.filter(r => r.questao_id !== respostaParaDeletar.questao_id);
-    localStorage.setItem('historico_respostas', JSON.stringify(historicoFiltrado));
-  }
-
-  alert('Resposta deletada com sucesso!');
+  await fetchHistorico();
+  fetchStats();
+  alert('Resposta deletada com sucesso!');
 } else {
-  const errorData = await response.json();
-  alert(errorData.message || 'Erro ao deletar resposta');
+  const errorData = await response.json();
+  alert(errorData.message || 'Erro ao deletar resposta');
 }
+
 
     } catch (error) {
       console.error('Erro ao deletar resposta:', error);
