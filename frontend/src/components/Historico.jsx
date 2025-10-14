@@ -379,7 +379,7 @@ if (response.ok) {
         </div>
         <div className="historico-actions">
           <button onClick={() => handleDeleteResposta(resposta.id)} className="btn btn-delete">
-            🗑️ Deletar
+            🗑️ Deletar ({resposta.id})
           </button>
 
         </div>
