@@ -125,9 +125,11 @@ const [filtroAno, setFiltroAno] = useState('');
       });
 
 if (response.ok) {
-  await fetchHistorico();
-  fetchStats();
-  alert('Resposta deletada com sucesso!');
+  setTimeout(() => {
+    fetchHistorico();
+    fetchStats();
+  }, 200);
+  alert('Resposta deletada com sucesso!');
 } else {
   const errorData = await response.json();
   alert(errorData.message || 'Erro ao deletar resposta');
