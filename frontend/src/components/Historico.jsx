@@ -378,7 +378,10 @@ if (response.ok) {
           </small>
         </div>
         <div className="historico-actions">
-          <button onClick={() => handleDeleteResposta(resposta.id)} className="btn btn-delete">
+          <button 
+          onClick={() => handleDeleteResposta(resposta.id)} 
+          className="btn btn-delete" 
+          disabled={loading}>
             🗑️ Deletar ({resposta.id})
           </button>
 
