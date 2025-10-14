@@ -130,13 +130,15 @@ const [filtroAno, setFiltroAno] = useState('');
 
 if (response.ok) {
   // Remove imediatamente o item localmente (UX mais rápida)
-  setHistorico(historico => historico.filter(h => h.id !== id));
+setLoading(true); // <- Impede renderização enquanto recarrega
+const res = await fetch(/* ... */);
+if (res.ok) {
+  await fetchHistorico(); // <-- Carrega SÓ do backend (confia só no backend!)
+  fetchStats();
+  alert('Resposta deletada com sucesso!');
+}
+setLoading(false);
 
-  // Garante sincronismo real do backend após um pequeno delay (por delays do Supabase)
-  setTimeout(() => {
-    fetchHistorico();
-    fetchStats();
-  }, 2000);
 
   alert('Resposta deletada com sucesso!');
 } else {
