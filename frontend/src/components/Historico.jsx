@@ -50,7 +50,11 @@ const [filtroAno, setFiltroAno] = useState('');
 
       if (response.ok) {
         const data = await response.json();
+
+        console.log("Array historico antes do setHistorico:", historico);
         setHistorico(data.data);
+        console.log("Array historico depois do setHistorico:", data.data);
+
         console.log('Dados recebidos:', data.data);
         //setTotalPages(data.pagination.totalPages);
         setTotalPages(data.pagination ? data.pagination.totalPages : 1);
@@ -132,7 +136,7 @@ if (response.ok) {
   setTimeout(() => {
     fetchHistorico();
     fetchStats();
-  }, 1000);
+  }, 2000);
 
   alert('Resposta deletada com sucesso!');
 } else {
