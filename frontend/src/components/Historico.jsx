@@ -222,20 +222,20 @@ const [filtroAno, setFiltroAno] = useState('');
 <div className="stats-grid">
   <div className="stat-card blue">
     <div className="stat-number">
-  <CountUp start={0} end={stats.total_respostas} duration={1.0} />
-</div>
+      <CountUp start={0} end={parseInt(stats.total_respostas || 0, 10)} duration={1.0} />
+    </div>
     <div className="stat-label">Total de Respostas</div>
   </div>
   <div className="stat-card green">
     <div className="stat-number">
-  <CountUp start={0} end={stats.total_acertos} duration={1.0} />
-</div>
+      <CountUp start={0} end={parseInt(stats.total_acertos || 0, 10)} duration={1.0} />
+    </div>
     <div className="stat-label">Acertos</div>
   </div>
   <div className="stat-card red">
     <div className="stat-number">
-  <CountUp start={0} end={stats.total_erros} duration={1.0} />
-</div>
+      <CountUp start={0} end={parseInt(stats.total_erros || 0, 10)} duration={1.0} />
+    </div>
     <div className="stat-label">Erros</div>
   </div>
   <div className="stat-card purple">
@@ -243,6 +243,7 @@ const [filtroAno, setFiltroAno] = useState('');
     <div className="stat-label">Taxa de Acerto</div>
   </div>
 </div>
+
 
       {/* Barra de pesquisa */}
 <div className="search-container">
@@ -348,12 +349,12 @@ const [filtroAno, setFiltroAno] = useState('');
   const isExpanded = expandedQuestions[resposta.id];
   const questionNumber = (currentPage - 1) * ITEMS_PER_PAGE + index + 1;
   return (
-    <div key={resposta.id} className="historico-item">
-      <div className="number-circle">{questionNumber}</div>
+    <div key={resposta?.id ?? index} className="historico-item">
+     <div className="number-circle">{questionNumber}</div>
       <div className="historico-info">
-        <strong>ID QUESTÃO: {resposta.questao_id} {resposta.tipo} {resposta.ano}</strong>
-        <div className="question-text">"{resposta.questao}"</div>
-      </div>
+      <strong>ID QUESTÃO: {resposta?.questao_id ?? '---'} {resposta?.tipo ?? ''} {resposta?.ano ?? ''}</strong>
+      <div className="question-text">"{resposta?.questao ?? ''}"</div>
+    </div>
       <div className="historico-result">
         <div>
           {resposta.acertou 
@@ -375,21 +376,21 @@ const [filtroAno, setFiltroAno] = useState('');
             🗑️ Deletar
           </button>
         </div>
-        {isExpanded && (
-          <div className="question-details" style={{ marginTop: 8 }}>
-            <div className="question-text">{resposta.questao}</div>
-            {resposta.alternativas && (
-              <div className="alternatives">
-                {resposta.alternativas.map((alt, altIndex) => {
-                  const isUserAnswer = alt.letra === resposta.resposta_usuario;
-                  const isCorrectAnswer = alt.letra === resposta.resposta_correta;
-                  let className = 'alternative';
-                  if (isCorrectAnswer) className += ' correct-answer';
-                  if (isUserAnswer && !isCorrectAnswer) className += ' incorrect-answer';
-                  return (
-                    <div key={altIndex} className={className}>
-                      <span className="alternative-letter">{alt.letra}:</span> {alt.texto}
-                    </div>
+  {isExpanded && (
+  <div className="question-details" style={{ marginTop: 8 }}>
+    <div className="question-text">{resposta.questao}</div>
+    {Array.isArray(resposta.alternativas) && (
+      <div className="alternatives">
+        {resposta.alternativas.map((alt, altIndex) => {
+          const isUserAnswer = alt.letra === resposta.resposta_usuario;
+          const isCorrectAnswer = alt.letra === resposta.resposta_correta;
+          let className = 'alternative';
+          if (isCorrectAnswer) className += ' correct-answer';
+          if (isUserAnswer && !isCorrectAnswer) className += ' incorrect-answer';
+          return (
+            <div key={altIndex} className={className}>
+              <span className="alternative-letter">{alt.letra}:</span> {alt.texto}
+            </div>
                   );
                 })}
               </div>
