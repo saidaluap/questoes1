@@ -381,9 +381,10 @@ const [filtroAno, setFiltroAno] = useState('');
           </small>
         </div>
         <div className="historico-actions">
-          <button onClick={() => handleDeleteResposta(respostaId)} className="btn btn-delete">
+          <button onClick={() => handleDeleteResposta(resposta.id)} className="btn btn-delete">
             🗑️ Deletar
           </button>
+
         </div>
         {isExpanded && (
           <div className="question-details" style={{ marginTop: 8 }}>
