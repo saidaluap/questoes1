@@ -1034,7 +1034,15 @@ const historicoCompleto = await Promise.all(
       db.get('SELECT * FROM questoes WHERE id = ?', [r.questao_id], (err, questao) => {
         if (err) return reject(err);
         // Garante que o campo "id" do histórico NÃO seja sobrescrito pelo id da questão!
-        resolve({ ...r, questao, questao_id_original: questao.id });
+        
+
+resolve({ 
+  ...r, 
+  questao, 
+  questao_id_questao: questao.id // <-- apenas para manter a informação da questão
+  // NÃO SOBRESCREVA 'id' !!!
+});
+
       });
     });
   })
