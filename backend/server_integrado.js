@@ -216,33 +216,28 @@ const { data, error } = await supabase
       return res.status(500).json({ success: false, message: "Erro ao criar usuário", error });
     }
 
-    // Gerar token normalmente (id pode vir do data.id)
-    const token = jwt.sign(
-      {
-        id: data.id,
-        email,
-        nome,
-        hospital,
-        tipo_usuario
-      },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
-    );
 
-    res.json({
-      success: true,
-      message: "Usuário cadastrado com sucesso",
-      data: {
-        token,
-        user: {
-          id: data.id,
-          email,
-          nome,
-          hospital,
-          tipo_usuario
-        }
-      }
-    });
+// Faça login automático no Auth para obter o access_token correto
+const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({ email, password });
+if (loginError || !loginData.session) {
+  return res.status(500).json({ success: false, message: "Usuário criado, mas erro ao logar para obter token." });
+}
+
+res.json({
+  success: true,
+  message: "Usuário cadastrado com sucesso",
+  data: {
+    token: loginData.session.access_token, // É o token que o frontend deve usar
+    user: {
+      id: data.id,
+      email,
+      nome,
+      hospital,
+      tipo_usuario
+    }
+  }
+});
+
   } catch (error) {
     res.status(500).json({ success: false, message: "Erro interno do servidor" });
   }
