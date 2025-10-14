@@ -953,26 +953,32 @@ app.put("/api/questoes/:id", authenticateToken, (req, res) => {
 });
 
 // Rota para deletar uma questão
-app.delete("/api/historico/deletar-resposta/:questao_id", authenticateToken, async (req, res) => {
-  const userId = req.user.id;
-  const questaoId = req.params.questao_id;
+app.delete("/api/historico/deletar-resposta/:id", authenticateToken, async (req, res) => {
+  const id = req.params.id;
+  const userId = req.user.id;
 
-  try {
-    const { data, error } = await supabase
-      .from('historico_respostas')
-      .delete()
-      .eq('user_id', userId)
-      .eq('questao_id', questaoId);
+  try {
+    const { data, error } = await supabase
+      .from('historico_respostas')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', userId);
 
-    if (error) {
-      return res.status(400).json({ error: error.message || error });
-    }
+    if (error) {
+      return res.status(400).json({ error: error.message || error });
+    }
 
-    res.json({ message: "Resposta deletada com sucesso!" });
-  } catch (err) {
-    res.status(500).json({ error: 'Erro interno do servidor', details: err.message });
-  }
+    if (!data || data.length === 0) {
+      return res.status(404).json({ error: "Resposta não encontrada para deletar." });
+    }
+
+    res.json({ message: "Resposta deletada com sucesso!" });
+  } catch (err) {
+    res.status(500).json({ error: 'Erro interno do servidor', details: err.message });
+  }
 });
+
+
 
 
 
