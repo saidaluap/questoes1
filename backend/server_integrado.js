@@ -951,6 +951,7 @@ app.put("/api/questoes/:id", authenticateToken, (req, res) => {
 app.delete("/api/historico/deletar-resposta/:id", authenticateToken, async (req, res) => {
   const id = req.params.id;
   const userId = req.user.id;
+console.log("Tentando deletar resposta do histórico. id do histórico:", id, "| id do usuário:", userId);
 
   try {
     const { data, error } = await supabase
@@ -958,6 +959,8 @@ app.delete("/api/historico/deletar-resposta/:id", authenticateToken, async (req,
       .delete()
       .eq('id', id)
       .eq('user_id', userId);
+
+    console.log("Resultado do delete:", data);
 
     if (error) {
       return res.status(400).json({ error: error.message || error });
