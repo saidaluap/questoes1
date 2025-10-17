@@ -3,19 +3,44 @@ import { useAuth } from './AuthContext';
 import Header from './Header';
 import Footer from './Footer';
 import Historico from './Historico';
+import { supabase } from './supabaseClient'; // ajuste o caminho conforme seu projeto
 
 function Perfil() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('perfil');
   const [formData, setFormData] = useState({
-    nome: user?.nome || '',
-    email: user?.email || '',
-    hospital: user?.hospital || '',
-    tipo_usuario: user?.tipo_usuario || ''
-  });
+    nome: '',
+    email: '',
+    hospital: '',
+    tipo_usuario: ''
+});
+
   const [editing, setEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+
+useEffect(() => {
+  async function fetchProfile() {
+    if (user?.email) {
+      const { data, error } = await supabase
+        .from('dados')
+        .select('*')
+        .eq('email', user.email)
+        .single();
+      if (data) {
+        setFormData({
+          nome: data.nome || '',
+          email: data.email || '',
+          hospital: data.hospital || '',
+          tipo_usuario: data.tipo_usuario || ''
+        });
+      }
+    }
+  }
+  fetchProfile();
+}, [user]);
+
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -25,32 +50,52 @@ function Perfil() {
     }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setMessage('');
-
-    // Simular atualização do perfil
-    setTimeout(() => {
-      setMessage('Perfil atualizado com sucesso!');
-      setEditing(false);
-      setLoading(false);
-      
-      // Limpar mensagem após 3 segundos
-      setTimeout(() => setMessage(''), 3000);
-    }, 1000);
-  };
-
-  const handleCancel = () => {
-    setFormData({
-      nome: user?.nome || '',
-      email: user?.email || '',
-      hospital: user?.hospital || '',
-      tipo_usuario: user?.tipo_usuario || ''
-    });
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setLoading(true);
+  setMessage('');
+  const { error } = await supabase
+    .from('dados')
+    .update({
+      nome: formData.nome,
+      hospital: formData.hospital,
+      tipo_usuario: formData.tipo_usuario
+    })
+    .eq('email', formData.email);
+  if (!error) {
+    setMessage('Perfil atualizado com sucesso!');
     setEditing(false);
-    setMessage('');
-  };
+    setLoading(false);
+    setTimeout(() => setMessage(''), 3000);
+  } else {
+    setMessage('Erro ao atualizar perfil!');
+    setLoading(false);
+  }
+};
+
+
+const handleCancel = () => {
+  setEditing(false);
+  setMessage('');
+  // Recarregar dados do perfil do banco
+  if (user?.email) {
+    supabase
+      .from('dados')
+      .select('*')
+      .eq('email', user.email)
+      .single()
+      .then(({ data }) => {
+        if (data) {
+          setFormData({
+            nome: data.nome || '',
+            email: data.email || '',
+            hospital: data.hospital || '',
+            tipo_usuario: data.tipo_usuario || ''
+          });
+        }
+      });
+  }
+};
 
   return (
     <div className="app-container">
