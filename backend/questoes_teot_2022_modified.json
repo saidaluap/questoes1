@@ -1968,12 +1968,40 @@
       },
       {
         "letra": "D",
-        "texto": "abdução seguida de rotação medial. Gabarito D. 77) O desmoide cortical localiza-se A) posterolateralmente na metáfise distal do fêmur. B) posteromedialmente na metáfise distal do fêmur. C) posterolateralmente na metáfise proximal da tíbia. D) posteromedialmente na metáfise proximal da tíbia."
+        "texto": "abdução seguida de rotação medial."
+      }
+    ],
+    "area": "Ortopedia Pediátrica",
+    "gabarito": "D"
+  },
+
+  {
+    "id": "Q077 TEOT 2022",
+    "tipo": "TEOT",
+    "ano": 2022,
+    "questao": "O desmoide cortical localiza-se",
+    "alternativas": [
+      {
+        "letra": "A",
+        "texto": "posterolateralmente na metáfise distal do fêmur."
+      },
+      {
+        "letra": "B",
+        "texto": "posteromedialmente na metáfise distal do fêmur."
+      },
+      {
+        "letra": "C",
+        "texto": "posterolateralmente na metáfise proximal da tíbia."
+      },
+      {
+        "letra": "D",
+        "texto": "posteromedialmente na metáfise proximal da tíbia."
       }
     ],
     "area": "Ortopedia Pediátrica",
     "gabarito": "B"
   },
+
   {
     "id": "Q078 TEOT 2022",
     "tipo": "TEOT",
@@ -2436,7 +2464,34 @@
       },
       {
         "letra": "D",
-        "texto": "afundamento do côndilo medial. Gabarito:A 96) Na tríade terrível do cotovelo com fratura da cabeça radial MASON 3 e fratura do coronoide REGAN -MORREY 2, a ordem usual das estruturas a serem reparadas é A) coronoide, rádio, ligamento colateral lateral, ligamento colateral medial. B) coronoide, rádio, ligam ento colateral medial, ligamento colateral lateral. C) rádio, coronoide, ligamento colateral medial, ligamento colateral lateral. D) rádio, coronoide, ligamento colateral lateral, ligamento colateral medial."
+        "texto": "afundamento do côndilo medial."
+      }
+    ],
+    "area": "Joelho",
+    "gabarito": "A"
+  },
+
+  {
+      "id": "Q096 TEOT 2022",
+    "tipo": "TEOT",
+    "ano": 2022,
+    "questao": "Na tríade terrível do cotovelo com fratura da cabeça radial MASON 3 e fratura do coronoide REGAN -MORREY 2, a ordem usual das estruturas a serem reparadas é ",
+    "alternativas": [
+      {
+        "letra": "A",
+        "texto": "coronoide, rádio, ligamento colateral lateral, ligamento colateral medial."
+      },
+      {
+        "letra": "B",
+        "texto": "coronoide, rádio, ligam ento colateral medial, ligamento colateral lateral."
+      },
+      {
+        "letra": "C",
+        "texto": "rádio, coronoide, ligamento colateral medial, ligamento colateral lateral."
+      },
+      {
+        "letra": "D",
+        "texto": "rádio, coronoide, ligamento colateral lateral, ligamento colateral medial."
       }
     ],
     "area": "Joelho",
