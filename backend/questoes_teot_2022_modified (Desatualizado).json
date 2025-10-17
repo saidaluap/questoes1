@@ -1,7 +1,5 @@
 [
 
-
-
   {
     "id": "Q001 TEOT 2022",
     "tipo": "TEOT",
@@ -936,17 +934,17 @@
     "id": "Q063 TEOT 2022",
     "tipo": "TEOT",
     "ano": 2022,
-    "questao": "Na lesão sacroilíaca, o parâmetro ósseo de segurança para passagem do parafuso sac",
+    "questao": "Na lesão sacroilíaca, o parâmetro ósseo de segurança para passagem do parafuso sacral, visualizado na radioscopia, é a região:",
     "alternativas": [
-      {"letra": "A", "texto": "ro é a distância entre o córtex anterior e o posterior."},
-      {"letra": "B", "texto": "ro é a distância entre o córtex medial e o lateral."},
-      {"letra": "C", "texto": "ro é a distância entre o córtex superior e o inferior."},
-      {"letra": "D", "texto": "ro é a distância entre o córtex anterior e o posterior."}
+      {"letra": "A", "texto": "da densidade cortical do ilíaco. "},
+      {"letra": "B", "texto": "posterior ao promontório sacral."},
+      {"letra": "C", "texto": "anterior à cortical posterior de S1. "},
+      {"letra": "D", "texto": "da área do disco residual de S1 e S2. "}
     ]
   }
+
+
+  
 ]
 
-
-
-]
 
