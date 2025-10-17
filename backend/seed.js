@@ -8,8 +8,10 @@ const db = new sqlite3.Database("./questoes.db");
 const questoesTARO2025 = JSON.parse(fs.readFileSync("./questoes_taro_2025.json", "utf8"));
 const questoesTEOT2024 = JSON.parse(fs.readFileSync("./questoes_teot_2024_modified.json", "utf8"));
 const questoesTEOT2023 = JSON.parse(fs.readFileSync("./questoes_teot_2023_modified.json", "utf8"));
+const questoesTEOT2022 = JSON.parse(fs.readFileSync("./questoes_teot_2022_modified.json", "utf8"));
 
-const todasAsQuestoes = questoesTARO2025.concat(questoesTEOT2024).concat (questoesTEOT2023);
+
+const todasAsQuestoes = questoesTARO2025.concat(questoesTEOT2024).concat (questoesTEOT2023).concat(questoesTEOT2022);
 
 // Inserir questões no banco
 console.log("Populando banco de dados com questões do TARO 2025 e TEOT 2024 (IDs únicos)...");
